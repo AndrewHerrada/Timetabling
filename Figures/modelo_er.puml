@@ -1,0 +1,151 @@
+@startuml "Modelo Entidad-Relación Sistema de Timetabling"
+
+' Entidades principales
+entity "Profesor" as profesor {
+  *id_profesor : integer <<PK>>
+  --
+  nombre : string
+  apellido : string
+  email : string
+  telefono : string
+}
+
+entity "Materia" as materia {
+  *id_materia : integer <<PK>>
+  --
+  nombre : string
+  descripcion : string
+  duracion : integer
+  tipo : enum
+}
+
+entity "Curso" as curso {
+  *id_curso : integer <<PK>>
+  --
+  nombre : string
+  capacidad : integer
+  *id_nivel : integer <<FK>>
+}
+
+entity "Nivel" as nivel {
+  *id_nivel : integer <<PK>>
+  --
+  nombre : string
+  descripcion : string
+}
+
+entity "Sala" as sala {
+  *id_sala : integer <<PK>>
+  --
+  nombre : string
+  capacidad : integer
+  tipo : string
+  ubicacion : string
+}
+
+entity "Clase" as clase {
+  *id_clase : integer <<PK>>
+  --
+  *id_curso : integer <<FK>>
+  *id_materia : integer <<FK>>
+  *id_profesor : integer <<FK>>
+  *id_sala : integer <<FK>>
+  dia : enum
+  hora_inicio : time
+  hora_fin : time
+}
+
+' Entidades especializadas
+entity "Clase_compartida" as clase_compartida {
+  *id_clase_compartida : integer <<PK>>
+  --
+  *id_clase_principal : integer <<FK>>
+  *id_clase_secundaria : integer <<FK>>
+}
+
+entity "Profesor_materia" as profesor_materia {
+  *id_profesor : integer <<PK, FK>>
+  *id_materia : integer <<PK, FK>>
+}
+
+entity "No_disponibilidad_docente" as no_disponibilidad {
+  *id_no_disponibilidad : integer <<PK>>
+  --
+  *id_profesor : integer <<FK>>
+  dia : enum
+  hora_inicio : time
+  hora_fin : time
+}
+
+entity "Dia_materia" as dia_materia {
+  *id_dia_materia : integer <<PK>>
+  --
+  *id_materia : integer <<FK>>
+  dia : enum
+}
+
+entity "Dia_materia_orquestal" as dia_materia_orq {
+  *id_dia_materia_orquestal : integer <<PK>>
+  --
+  *id_materia : integer <<FK>>
+  dia : enum
+}
+
+entity "Dia_operativo_curso" as dia_operativo {
+  *id_dia_operativo : integer <<PK>>
+  --
+  *id_curso : integer <<FK>>
+  dia : enum
+}
+
+entity "Requisito_horario" as requisito {
+  *id_requisito : integer <<PK>>
+  --
+  *id_materia : integer <<FK>>
+  dia_preferido : enum
+  hora_inicio_pref : time
+  hora_fin_pref : time
+  prioridad : integer
+}
+
+entity "Detalle_mat_regular" as detalle_regular {
+  *id_detalle : integer <<PK>>
+  --
+  *id_materia : integer <<FK>>
+  caracteristicas : string
+}
+
+entity "Detalle_mat_orquestal" as detalle_orquestal {
+  *id_detalle : integer <<PK>>
+  --
+  *id_materia : integer <<FK>>
+  tipo_orquesta : string
+  instrumento : string
+}
+
+' Relaciones
+profesor ||--o{ profesor_materia
+materia ||--o{ profesor_materia
+
+profesor ||--o{ no_disponibilidad
+
+nivel ||--o{ curso
+
+materia ||--o{ dia_materia
+materia ||--o{ dia_materia_orq
+materia ||--o{ requisito
+
+curso ||--o{ dia_operativo
+curso ||--o{ clase
+
+materia ||--o{ clase
+profesor ||--o{ clase
+sala ||--o{ clase
+
+clase ||--o{ clase_compartida : "principal"
+clase ||--o{ clase_compartida : "secundaria"
+
+materia ||--o| detalle_regular
+materia ||--o| detalle_orquestal
+
+@enduml

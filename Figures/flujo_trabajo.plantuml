@@ -1,0 +1,41 @@
+@startuml
+skinparam backgroundColor white
+skinparam roundCorner 15
+skinparam arrowColor #2c3e50
+skinparam activityBorderColor #3498db
+skinparam activityBackgroundColor #ecf0f1
+
+title Flujograma Metodológico: Optimización de Horarios mediante Algoritmos Genéticos
+
+start
+
+:FASE 1: RECOLECCIÓN Y ANÁLISIS DE DATOS;
+
+:FASE 2: MODELADO DEL PROBLEMA;
+
+
+:FASE 3: DISEÑO DEL ALGORITMO GENÉTICO;
+
+
+:FASE 4: IMPLEMENTACIÓN;
+
+
+:FASE 5: EXPERIMENTACIÓN Y AJUSTE;
+
+if (¿Resultados satisfactorios?) then (No)
+  :Optimización de parámetros;
+  :Iteración en el ajuste de parámetros;
+else (Sí)
+  :FASE 6: VALIDACIÓN;
+
+  if (¿Validación exitosa?) then (No)
+    :Ajustes al algoritmo;
+    :Iteración en mejoras al algoritmo;
+  else (Sí)
+    :FASE 7: PRESENTACIÓN DE RESULTADOS Y CONCLUSIONES;
+
+  endif
+endif
+
+stop
+@enduml
