@@ -1,0 +1,27 @@
+flowchart TD
+    A[Materia.xlsx] --> C[Fusión inicial]
+    B[Detalle_materia.xlsx] --> C
+    C -->|"merge on='materia_id'"| D[df_merged]
+    D --> E[Verificación valores nulos]
+    
+    F[Dia_operativo_curso.xlsx] --> G[Integración días operativos]
+    D --> G
+    G -->|"left join on='curso_id'"| H[df_merged2]
+    H --> I[Verificación valores nulos]
+    
+    J[Clase_compartida.xlsx] --> K[Limpieza de duplicados]
+    K --> L[Integración clases compartidas]
+    H --> L
+    L -->|"left join on='materia_id'"| M[df_merged3]
+    M --> N[Llenado valores nulos 'clase_compartida'='Individual']
+    
+    O[Curso.xlsx] --> P[Integración información cursos]
+    N --> P
+    P -->|"left join on='curso_id'"| Q[df_final]
+    Q --> R[Verificación cursos sin horario]
+    
+    R --> S[Transformación booleanos a enteros]
+    S --> T[Creación 'horas_semanales_reales']
+    T --> U[Verificación consistencia horas]
+    U --> V[Reorganización y selección de columnas]
+    V --> W[Exportación a Excel - tabla_minable.xlsx]

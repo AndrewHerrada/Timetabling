@@ -13,6 +13,8 @@ entity "Materia" as materia {
   nombre_materia : string
   horas_semanales_tipicas : integer
   tipo_materia : string
+  seccion : string
+  cantidad_docente : integer
 }
 
 entity "Curso" as curso {
@@ -30,7 +32,7 @@ entity "Profesor" as profesor {
   --
   nombre : string
   apellido : string
-  especialidad : string
+  seccion : string
   categoria : string
 }
 
