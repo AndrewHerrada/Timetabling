@@ -1,0 +1,17 @@
+# Dependencias principales
+pandas>=1.3.0
+numpy>=1.21.0
+openpyxl>=3.0.9
+
+# Para visualización
+matplotlib>=3.4.3
+seaborn>=0.11.2
+
+# Para manejo de archivos Excel
+xlrd>=2.0.1
+xlsxwriter>=3.0.1
+
+# Herramientas de desarrollo (opcionales)
+pytest>=6.2.5
+black>=21.8b0
+flake8>=3.9.2
