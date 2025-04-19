@@ -1,151 +1,104 @@
-@startuml "Modelo Entidad-Relación Sistema de Timetabling"
-
-' Entidades principales
-entity "Profesor" as profesor {
-  *id_profesor : integer <<PK>>
-  --
-  nombre : string
-  apellido : string
-  email : string
-  telefono : string
+@startuml Entidad-relacion
+' Configuración estilo
+skinparam class {
+  BackgroundColor LightSkyBlue
+  ArrowColor DeepSkyBlue
+  BorderColor Navy
 }
 
+' Entidades principales
 entity "Materia" as materia {
-  *id_materia : integer <<PK>>
+  *materia_id : string <<PK>>
   --
-  nombre : string
-  descripcion : string
-  duracion : integer
-  tipo : enum
+  nombre_materia : string
+  horas_semanales_tipicas : integer
+  tipo_materia : string
 }
 
 entity "Curso" as curso {
-  *id_curso : integer <<PK>>
+  *curso_id : string <<PK>>
   --
-  nombre : string
-  capacidad : integer
-  *id_nivel : integer <<FK>>
+  nombre_curso : string
+  nivel : string
+  horario_entrada : time
+  horario_salida : time
+  inscritos : integer
 }
 
-entity "Nivel" as nivel {
-  *id_nivel : integer <<PK>>
+entity "Profesor" as profesor {
+  *profesor_id : integer <<PK>>
   --
   nombre : string
-  descripcion : string
+  apellido : string
+  especialidad : string
+  categoria : string
 }
 
 entity "Sala" as sala {
-  *id_sala : integer <<PK>>
+  *sala_id : string <<PK>>
   --
-  nombre : string
   capacidad : integer
-  tipo : string
-  ubicacion : string
+  tipo_sala : string
+  nombre_nivel : string
+}
+
+' Entidades operativas
+entity "Detalle_materia" as detalle_materia {
+  *requisito_id : integer <<PK>>
+  --
+  *curso_id : string <<FK>>
+  *materia_id : string <<FK>>
+  frecuencia_semanal : integer
+  duracion_sesion_horas : decimal
 }
 
 entity "Clase" as clase {
-  *id_clase : integer <<PK>>
+  *clase_id : string <<PK>>
   --
-  *id_curso : integer <<FK>>
-  *id_materia : integer <<FK>>
-  *id_profesor : integer <<FK>>
-  *id_sala : integer <<FK>>
-  dia : enum
+  *materia_id : string <<FK>>
+  *profesor_id : integer <<FK>>
+  *sala_id : string <<FK>>
+  dia_semana : string
   hora_inicio : time
   hora_fin : time
-}
-
-' Entidades especializadas
-entity "Clase_compartida" as clase_compartida {
-  *id_clase_compartida : integer <<PK>>
-  --
-  *id_clase_principal : integer <<FK>>
-  *id_clase_secundaria : integer <<FK>>
-}
-
-entity "Profesor_materia" as profesor_materia {
-  *id_profesor : integer <<PK, FK>>
-  *id_materia : integer <<PK, FK>>
-}
-
-entity "No_disponibilidad_docente" as no_disponibilidad {
-  *id_no_disponibilidad : integer <<PK>>
-  --
-  *id_profesor : integer <<FK>>
-  dia : enum
-  hora_inicio : time
-  hora_fin : time
-}
-
-entity "Dia_materia" as dia_materia {
-  *id_dia_materia : integer <<PK>>
-  --
-  *id_materia : integer <<FK>>
-  dia : enum
-}
-
-entity "Dia_materia_orquestal" as dia_materia_orq {
-  *id_dia_materia_orquestal : integer <<PK>>
-  --
-  *id_materia : integer <<FK>>
-  dia : enum
+  *requisito_id : integer <<FK>>
 }
 
 entity "Dia_operativo_curso" as dia_operativo {
-  *id_dia_operativo : integer <<PK>>
+  *curso_id : string <<FK>>
   --
-  *id_curso : integer <<FK>>
-  dia : enum
+  lunes : boolean
+  martes : boolean
+  miercoles : boolean
+  jueves : boolean
+  viernes : boolean
 }
 
-entity "Requisito_horario" as requisito {
-  *id_requisito : integer <<PK>>
-  --
-  *id_materia : integer <<FK>>
-  dia_preferido : enum
-  hora_inicio_pref : time
-  hora_fin_pref : time
-  prioridad : integer
+' Tablas intermedias (relaciones muchos a muchos)
+entity "Profesor_materia" as profesor_materia {
+  *profesor_id : integer <<FK>>
+  *materia_id : string <<FK>>
 }
 
-entity "Detalle_mat_regular" as detalle_regular {
-  *id_detalle : integer <<PK>>
+entity "Clase_compartida" as clase_compartida {
+  *materia_id : string <<FK>>
   --
-  *id_materia : integer <<FK>>
-  caracteristicas : string
-}
-
-entity "Detalle_mat_orquestal" as detalle_orquestal {
-  *id_detalle : integer <<PK>>
-  --
-  *id_materia : integer <<FK>>
-  tipo_orquesta : string
-  instrumento : string
+  clase_compartida : string
 }
 
 ' Relaciones
-profesor ||--o{ profesor_materia
-materia ||--o{ profesor_materia
+materia "1" -- "0..*" detalle_materia : implementada en
+materia "1" -- "0..*" clase : se imparte como
+materia "1" -- "0..*" profesor_materia : es impartida por
+materia "1" -- "0..*" clase_compartida : comparte con
 
-profesor ||--o{ no_disponibilidad
+curso "1" -- "0..*" detalle_materia : contiene
+curso "1" -- "1" dia_operativo : opera en
 
-nivel ||--o{ curso
+profesor "1" -- "0..*" clase : imparte
+profesor "1" -- "0..*" profesor_materia : puede impartir
 
-materia ||--o{ dia_materia
-materia ||--o{ dia_materia_orq
-materia ||--o{ requisito
+sala "1" -- "0..*" clase : alberga
 
-curso ||--o{ dia_operativo
-curso ||--o{ clase
-
-materia ||--o{ clase
-profesor ||--o{ clase
-sala ||--o{ clase
-
-clase ||--o{ clase_compartida : "principal"
-clase ||--o{ clase_compartida : "secundaria"
-
-materia ||--o| detalle_regular
-materia ||--o| detalle_orquestal
-
+detalle_materia "1" -- "0..*" clase : programa
 @enduml
