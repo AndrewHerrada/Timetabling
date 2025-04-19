@@ -42,6 +42,9 @@ def main():
     materias_secciones = data_loader.cargar_materias_secciones("db/tabla_minable.xlsx")
     salas = data_loader.cargar_salas("db/Sala.xlsx")
     
+    # Establecer disponibilidad de profesores basado en los datos de materias
+    profesores = data_loader.establecer_disponibilidad_profesores(profesores, "db/tabla_minable.xlsx")
+    
     print(f"Datos cargados: {len(profesores)} profesores, {len(materias_secciones)} materias/secciones, {len(salas)} salas")
     
     # Configurar restricciones
