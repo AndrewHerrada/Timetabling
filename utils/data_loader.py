@@ -40,7 +40,7 @@ class DataLoader:
                 nombre = f"{row.get('nombre', '')} {row.get('apellido', '')}".strip()
                 
                 # Determinar si tiene ítem basado en la categoría
-                tiene_item = row.get('categoria', '').lower() == 'item'
+                tiene_item = str(row.get('categoria', '')).lower() == 'item'
                 
                 # Extraer especialidades basadas en la sección
                 # Por ejemplo, si la sección es "Guitarra", puede impartir materias relacionadas

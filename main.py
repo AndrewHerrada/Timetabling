@@ -95,7 +95,7 @@ def main():
     # Crear directorio para resultados si no existe
     if not os.path.exists("resultados"):
         os.makedirs("resultados")
-    
+        
     # Exportar a Excel
     visualizador.exportar_excel(mejor_solucion, "resultados/horario_final.xlsx")
     print("Horario exportado a 'resultados/horario_final.xlsx'")
