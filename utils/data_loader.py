@@ -1,530 +1,328 @@
 # -*- coding: utf-8 -*-
 # filename: utils/data_loader.py
 
-"""
-Utilidad para cargar datos desde archivos CSV y prepararlos para el algoritmo.
-"""
-
 import os
 import pandas as pd
 import numpy as np
 import datetime
-# Asegúrate que las rutas de importación sean correctas respecto a tu estructura
+# Asegúrate que las rutas de importación sean correctas
 from model.profesor import Profesor
 from model.sala import Sala
 from model.requisito_clase import RequisitoClase
 from config import DIAS_SEMANA, HORAS_DIA
 
-class DataLoaderError(Exception):
-    """Custom exception for data loading errors."""
-    pass
+# ... (DataLoaderError y __init__ sin cambios) ...
+class DataLoaderError(Exception): pass
 
 class DataLoader:
-    """
-    Clase para cargar y procesar datos desde archivos CSV.
-    """
-
     def __init__(self, config_horas_dia=HORAS_DIA, config_dias_semana=DIAS_SEMANA):
         self.profesores_map_id = {}
         self.profesores_map_nombre = {}
         self.salas_map_id = {}
         self.requisitos = []
         self.dias_semana = config_dias_semana
-        try:
-            self.slots_info = self._procesar_slots_config(config_horas_dia)
-        except DataLoaderError as e:
-            print(f"Error fatal inicializando DataLoader: {e}")
-            raise # Re-lanzar error fatal
+        try: self.slots_info = self._procesar_slots_config(config_horas_dia)
+        except DataLoaderError as e: print(f"Error fatal inicializando: {e}"); raise
 
+    # _procesar_slots_config, _map_time_to_slot_index, _get_allowed_slots sin cambios desde la versión .xlsx
     def _procesar_slots_config(self, horas_dia_config):
-        """Procesa la configuración HORAS_DIA para facilitar el mapeo de tiempos."""
         slots = {}
-        if not horas_dia_config:
-             raise DataLoaderError("La configuración HORAS_DIA está vacía.")
+        if not horas_dia_config: raise DataLoaderError("HORAS_DIA vacía.")
         for i, slot_str in enumerate(horas_dia_config):
             try:
-                parts = slot_str.split('-')
-                if len(parts) != 2:
-                    raise ValueError("Formato incorrecto, falta '-'")
-                start_str, end_str = parts
-                # Usar una fecha base fija (año bisiesto para evitar problemas) para convertir a datetime
+                parts = slot_str.split('-'); start_str, end_str = parts[0], parts[1]
                 base_date = datetime.date(2024, 1, 1)
                 start_time = datetime.datetime.combine(base_date, datetime.datetime.strptime(start_str.strip(), '%H:%M').time())
                 end_time = datetime.datetime.combine(base_date, datetime.datetime.strptime(end_str.strip(), '%H:%M').time())
-                 # Ajustar fin de día si cruza la medianoche (poco probable en este contexto)
-                if end_time <= start_time:
-                     print(f"Advertencia: Slot {slot_str} parece terminar antes o al mismo tiempo que empieza. Asegúrate que es correcto.")
-                     # Decidir si ajustar o lanzar error. Ajustemos por ahora.
-                     # end_time += datetime.timedelta(days=1) # Descomentar si se permiten clases nocturnas
-
+                if end_time <= start_time: print(f"Advertencia: Slot {slot_str} fin <= inicio.")
                 slots[i] = {'idx': i, 'start': start_time, 'end': end_time, 'label': slot_str}
-            except ValueError as e:
-                 raise DataLoaderError(f"Formato incorrecto en HORAS_DIA: '{slot_str}'. Debe ser HH:MM-HH:MM. Error: {e}")
-            except Exception as e:
-                 raise DataLoaderError(f"Error inesperado procesando slot '{slot_str}': {e}")
-
-        if not slots:
-             raise DataLoaderError("No se pudieron procesar slots desde HORAS_DIA.")
+            except Exception as e: raise DataLoaderError(f"Error procesando slot '{slot_str}': {e}")
+        if not slots: raise DataLoaderError("No se procesaron slots.")
         return slots
 
     def _map_time_to_slot_index(self, time_obj):
-        """Encuentra el índice del slot que contiene la hora dada (comparando tiempos)."""
         base_date = datetime.date(2024, 1, 1)
         target_time = datetime.datetime.combine(base_date, time_obj)
         for idx, info in self.slots_info.items():
-            # Comprobar si el tiempo está dentro del slot [start, end)
-            # Ajuste: Considerar si el inicio del slot es >= target time?
-            # Por ahora, mantenemos la lógica original: el target time debe caer DENTRO del slot.
-            if info['start'] <= target_time < info['end']:
-                return idx
-        # Si no se encuentra, puede ser un hueco entre slots definidos
-        # print(f"Debug: Tiempo {time_obj} no cae exactamente dentro de ningún slot definido.")
+            if info['start'] <= target_time < info['end']: return idx
         return None
 
     def _get_allowed_slots(self, row):
-        """Calcula los slots permitidos para un requisito de tabla_minable."""
         allowed_slots = []
         req_id_debug = row.get('requisito_id', 'N/A')
         try:
-            # --- Parsear ventana horaria ---
-            start_window_str = str(row['horario_entrada']).strip()
-            end_window_str = str(row['horario_salida']).strip()
-            time_formats = ['%H:%M:%S', '%H:%M'] # Permitir ambos formatos
-            start_window = None
-            end_window = None
-            for fmt in time_formats:
-                try:
-                    start_window = datetime.datetime.strptime(start_window_str, fmt).time()
-                    break
-                except ValueError: continue
-            for fmt in time_formats:
-                 try:
-                    end_window = datetime.datetime.strptime(end_window_str, fmt).time()
-                    break
-                 except ValueError: continue
-
-            if start_window is None or end_window is None:
-                 raise ValueError(f"Formato de hora no reconocido para entrada/salida: '{start_window_str}'/'{end_window_str}'")
+            start_window, end_window = None, None
+            start_window_val = row['horario_entrada']; end_window_val = row['horario_salida']
+            time_formats = ['%H:%M:%S', '%H:%M']
+            if isinstance(start_window_val, datetime.time): start_window = start_window_val
+            else:
+                for fmt in time_formats:
+                    try: start_window = datetime.datetime.strptime(str(start_window_val).strip(), fmt).time(); break
+                    except ValueError: continue
+            if isinstance(end_window_val, datetime.time): end_window = end_window_val
+            else:
+                for fmt in time_formats:
+                    try: end_window = datetime.datetime.strptime(str(end_window_val).strip(), fmt).time(); break
+                    except ValueError: continue
+            if start_window is None or end_window is None: raise ValueError("Formato hora no reconocido")
 
             base_date = datetime.date(2024, 1, 1)
             start_window_dt = datetime.datetime.combine(base_date, start_window)
             end_window_dt = datetime.datetime.combine(base_date, end_window)
-            if end_window_dt <= start_window_dt: # Manejar ventana que cruza medianoche o es inválida
-                 # Asumimos que no cruza medianoche para horarios escolares
-                 if end_window_dt < start_window_dt:
-                     print(f"Advertencia Req {req_id_debug}: horario_salida es anterior a horario_entrada. ({start_window_str} - {end_window_str}). Se usará solo la hora de inicio.")
-                     end_window_dt = start_window_dt + datetime.timedelta(minutes=1) # Ventana mínima
-                 # Si son iguales, es una ventana instantánea, quizás no útil
-                 elif end_window_dt == start_window_dt:
-                      print(f"Advertencia Req {req_id_debug}: horario_entrada y salida son iguales ({start_window_str}).")
-                      end_window_dt += datetime.timedelta(minutes=1)
+            if end_window_dt <= start_window_dt: end_window_dt = start_window_dt + datetime.timedelta(minutes=45) # Ajuste mínimo
 
-
-            # --- Parsear días permitidos ---
             allowed_days_indices = []
-            # Usar DIAS_SEMANA de config para la comparación y mapeo de índices
-            day_columns_expected = [d.lower() for d in self.dias_semana] # lunes, martes, ...
-            for i, day_name_lower_config in enumerate(day_columns_expected):
-                 # Buscar columna en el CSV (insensible a mayúsculas/minúsculas)
-                 found_col = None
-                 for csv_col in row.index: # Iterar sobre nombres de columna reales del CSV
-                     if csv_col.lower() == day_name_lower_config:
-                         found_col = csv_col
-                         break
-                 if found_col and pd.notna(row[found_col]):
-                     try:
-                         if int(row[found_col]) == 1:
-                             allowed_days_indices.append(i)
-                     except (ValueError, TypeError):
-                          print(f"Advertencia Req {req_id_debug}: Valor no numérico en columna de día '{found_col}'. Se ignora.")
+            day_cols_map = {d.lower(): i for i, d in enumerate(self.dias_semana)}
+            for excel_col in row.index:
+                col_lower = str(excel_col).lower()
+                if col_lower in day_cols_map:
+                    if pd.notna(row[excel_col]):
+                        try:
+                            if int(row[excel_col]) == 1 or str(row[excel_col]).lower() == 'true':
+                                allowed_days_indices.append(day_cols_map[col_lower])
+                        except (ValueError, TypeError): pass
 
+            if not allowed_days_indices: return []
 
-            if not allowed_days_indices:
-                 print(f"Advertencia Req {req_id_debug}: No tiene días asignados (lunes-viernes = 0). No se generarán slots.")
-                 return []
-
-            # --- Encontrar slots válidos ---
             for day_idx in allowed_days_indices:
                 for slot_idx, slot_info in self.slots_info.items():
-                    # Un slot es válido si su intervalo [start, end) INTERSECTA
-                    # con la ventana permitida [start_window, end_window).
-                    # Simplificación: El inicio del slot debe estar DENTRO de la ventana.
-                    # Esto asegura que la clase no empieza antes de lo permitido.
-                    # Necesita refinamiento si las clases pueden empezar a mitad de slot.
-                    # Condición: slot_start >= window_start AND slot_start < window_end
                     if start_window_dt <= slot_info['start'] < end_window_dt:
-                        # Ahora, verificar si el bloque completo cabe antes de window_end
-                        slots_needed = int(row.get('duracion_sesion_horas', 1))
+                        try: slots_needed = int(float(str(row.get('duracion_sesion_horas', '1')).strip()))
+                        except: slots_needed = 1
                         if slots_needed <= 0: slots_needed = 1
-                        
-                        can_fit = True
-                        last_slot_time = slot_info['start'] # Hora inicio primer slot
-                        for i in range(slots_needed):
-                             current_slot_idx = slot_idx + i
-                             if current_slot_idx >= len(self.slots_info): # Se sale de los slots definidos
-                                 can_fit = False
-                                 break
-                             current_slot_info = self.slots_info[current_slot_idx]
-                             # El *fin* del último slot del bloque debe ser <= window_end
-                             if i == slots_needed - 1:
-                                last_slot_time = current_slot_info['end']
+                        can_fit = True; last_slot_time = slot_info['start']
+                        if slots_needed > 0:
+                            for i in range(slots_needed):
+                                cur_idx = slot_idx + i
+                                if cur_idx >= len(self.slots_info): can_fit = False; break
+                                cur_info = self.slots_info[cur_idx]
+                                if i == slots_needed - 1: last_slot_time = cur_info['end']
+                                if i > 0 and cur_info['start'] != self.slots_info[cur_idx - 1]['end']: can_fit = False; break
+                            if last_slot_time > end_window_dt: can_fit = False
+                        else: can_fit = False
+                        if can_fit: allowed_slots.append((day_idx, slot_idx))
 
-                             # Podría haber huecos en HORAS_DIA, verificar continuidad si es necesario
-                             if i > 0:
-                                 prev_slot_info = self.slots_info[current_slot_idx - 1]
-                                 if current_slot_info['start'] != prev_slot_info['end']:
-                                     # print(f"Debug Req {req_id_debug}: Bloque no contiguo en slot {current_slot_idx} para inicio {slot_idx}")
-                                     can_fit = False # No contiguo
-                                     break
-
-                        # Verificar si el fin del último slot está dentro de la ventana
-                        if last_slot_time > end_window_dt:
-                            can_fit = False
-
-                        if can_fit:
-                            allowed_slots.append((day_idx, slot_idx))
-                        # else:
-                            # print(f"Debug Req {req_id_debug}: Bloque iniciado en ({day_idx},{slot_idx}) no cabe en ventana {start_window_str}-{end_window_str}")
-
-
-        except KeyError as e:
-             print(f"Error procesando slots para Req {req_id_debug}: Falta columna esperada '{e}'. Se devolverán 0 slots.")
-             return []
-        except (ValueError, TypeError) as e:
-             print(f"Error procesando slots para Req {req_id_debug}: Error de tipo/formato: {e}. Se devolverán 0 slots.")
-             return []
-        except Exception as e:
-            print(f"Error inesperado procesando slots para Req {req_id_debug}: {e}. Se devolverán 0 slots.")
-            return []
-
-        if not allowed_slots:
-             print(f"Advertencia Req {req_id_debug}: No resultó en slots permitidos válidos con la configuración y ventana {start_window_str}-{end_window_str} en días {allowed_days_indices}.")
-
-        # Devolver slots únicos por si acaso
+        except Exception as e: print(f"Error procesando slots Req {req_id_debug}: {e}"); return []
+        if not allowed_slots: print(f"Advertencia Req {req_id_debug}: No hay slots válidos.")
         return sorted(list(set(allowed_slots)))
 
-
-    def cargar_profesores(self, archivo_csv):
-        """Carga datos de profesores desde un archivo CSV."""
-        print(f"Cargando profesores desde: {archivo_csv}")
+    # cargar_profesores y cargar_salas sin cambios respecto a la versión anterior
+    def cargar_profesores(self, archivo_xlsx):
+        print(f"Cargando profesores desde: {archivo_xlsx}")
         try:
-            # Especificar dtype=str para leer IDs sin interpretación numérica
-            df = pd.read_csv(archivo_csv, dtype={'profesor_id': str})
-            df.columns = df.columns.str.strip().str.lower() # Normalizar nombres de columna
-
-            self.profesores_map_id = {} # Resetear mapas
-            self.profesores_map_nombre = {}
-
-            for _, row in df.iterrows():
-                 # Usar .loc para evitar SettingWithCopyWarning si se modifica df
+            df = pd.read_excel(archivo_xlsx, dtype={'profesor_id': str})
+            df.columns = df.columns.str.strip().str.lower()
+            initial_rows = len(df); df.dropna(subset=['profesor_id', 'nombre', 'apellido'], inplace=True); rows_dropped = initial_rows - len(df)
+            if rows_dropped > 0: print(f"Advertencia: Se eliminaron {rows_dropped} filas de profesores vacías.")
+            self.profesores_map_id = {}; self.profesores_map_nombre = {}
+            for index, row in df.iterrows():
                 row = row.copy()
-                # Limpiar espacios en todas las celdas de string
-                for col in df.select_dtypes(include=['object']).columns:
-                     if pd.notna(row[col]):
-                          row[col] = str(row[col]).strip()
-
-                prof_id = row.get('profesor_id') # Ya es string por dtype
-                nombre = row.get('nombre', '')
-                apellido = row.get('apellido', '')
-                nombre_completo = f"{nombre} {apellido}".strip()
-                categoria = row.get('categoria', 'Contrato')
-                seccion_primaria = row.get('seccion', '')
-
-                if not prof_id or not nombre_completo:
-                     print(f"Advertencia: Fila de profesor omitida por falta de ID ({prof_id}) o nombre ({nombre_completo}). Fila: {row.to_dict()}")
-                     continue
-
-                # Validar categoría
-                if categoria.lower() not in ['item', 'contrato']:
-                     print(f"Advertencia: Categoría de profesor '{categoria}' no reconocida para ID {prof_id}. Se asume 'Contrato'.")
-                     categoria = 'Contrato'
-
-                profesor = Profesor(
-                    id=prof_id,
-                    nombre=nombre_completo,
-                    categoria=categoria.capitalize(), # Guardar como 'Item' o 'Contrato'
-                    seccion_primaria=seccion_primaria
-                )
-
-                if prof_id in self.profesores_map_id:
-                     print(f"Advertencia: ID de profesor duplicado '{prof_id}'. Se sobrescribirá con la última entrada.")
+                for col in df.select_dtypes(include=['object', 'string']).columns:
+                     if pd.notna(row[col]): row[col] = str(row[col]).strip()
+                prof_id = row.get('profesor_id'); nombre = row.get('nombre', ''); apellido = row.get('apellido', '')
+                nombre_completo = f"{nombre} {apellido}".strip(); categoria = row.get('categoria', 'Contrato'); seccion_primaria = row.get('seccion', '')
+                if isinstance(categoria, str) and categoria.lower() not in ['item', 'contrato']: categoria = 'Contrato'
+                elif not isinstance(categoria, str): categoria = 'Contrato'
+                profesor = Profesor( id=prof_id, nombre=nombre_completo, categoria=categoria.capitalize(), seccion_primaria=seccion_primaria )
+                if prof_id in self.profesores_map_id: print(f"Advertencia: ID prof duplicado '{prof_id}'.")
                 self.profesores_map_id[prof_id] = profesor
-
-                if nombre_completo in self.profesores_map_nombre:
-                     # Podría haber homónimos, usar ID como desambiguador si es necesario en tabla_minable
-                     print(f"Advertencia: Nombre de profesor duplicado '{nombre_completo}'. La búsqueda por nombre puede fallar si no se usa ID.")
-                     # Podríamos almacenar una lista de IDs por nombre:
-                     # self.profesores_map_nombre.setdefault(nombre_completo, []).append(prof_id)
-                else:
-                     self.profesores_map_nombre[nombre_completo] = profesor # Guardar solo si es único por ahora
-
+                if nombre_completo not in self.profesores_map_nombre: self.profesores_map_nombre[nombre_completo] = profesor
+                else: print(f"Advertencia: Nombre prof duplicado '{nombre_completo}'.")
             print(f"Profesores cargados: {len(self.profesores_map_id)}")
-            if not self.profesores_map_id:
-                 raise DataLoaderError("No se cargaron profesores.")
+            if not self.profesores_map_id: raise DataLoaderError("No se cargaron profesores válidos.")
             return list(self.profesores_map_id.values())
+        except FileNotFoundError: raise DataLoaderError(f"Archivo profesores no encontrado: {archivo_xlsx}")
+        except KeyError as e: raise DataLoaderError(f"Columna faltante en {archivo_xlsx}: {e}")
+        except Exception as e: import traceback; print(f"Error inesperado cargando profesores:"); traceback.print_exc(); raise DataLoaderError(f"Error inesperado cargando profesores: {e}")
 
-        except FileNotFoundError:
-             raise DataLoaderError(f"Archivo de profesores no encontrado: {archivo_csv}")
-        except KeyError as e:
-             raise DataLoaderError(f"Columna esperada no encontrada en {archivo_csv}: {e}")
-        except Exception as e:
-            raise DataLoaderError(f"Error inesperado al cargar profesores desde {archivo_csv}: {e}")
-
-    def cargar_salas(self, archivo_csv):
-        """Carga datos de salas desde un archivo CSV."""
-        print(f"Cargando salas desde: {archivo_csv}")
+    def cargar_salas(self, archivo_xlsx):
+        print(f"Cargando salas desde: {archivo_xlsx}")
         try:
-            # Especificar dtype para IDs
-            df = pd.read_csv(archivo_csv, dtype={'sala_id': str})
-            df.columns = df.columns.str.strip().str.lower() # Normalizar
-
-            self.salas_map_id = {} # Resetear
-
-            for _, row in df.iterrows():
+            df = pd.read_excel( archivo_xlsx, dtype={'sala_id': str} ); df.columns = df.columns.str.strip().str.lower(); self.salas_map_id = {}
+            initial_rows = len(df); df.dropna(subset=['sala_id'], inplace=True); rows_dropped = initial_rows - len(df)
+            if rows_dropped > 0: print(f"Advertencia: Se eliminaron {rows_dropped} filas de salas vacías.")
+            for index, row in df.iterrows():
                 row = row.copy()
-                for col in df.select_dtypes(include=['object']).columns:
-                     if pd.notna(row[col]):
-                          row[col] = str(row[col]).strip()
-
-                sala_id = row.get('sala_id')
-                capacidad_str = str(row.get('capacidad', '0')).strip()
-                tipo_sala = row.get('tipo_sala', 'Regular')
-                nombre_nivel = row.get('nombre_nivel', 'Todos')
-
-                if not sala_id:
-                     print(f"Advertencia: Fila de sala omitida por falta de ID. Fila: {row.to_dict()}")
-                     continue
-
-                try:
-                    capacidad = int(float(capacidad_str)) # Permitir decimales y convertir a int
-                except (ValueError, TypeError):
-                    print(f"Advertencia: Capacidad inválida '{capacidad_str}' para sala {sala_id}. Se usará 0.")
-                    capacidad = 0
-
-                # Mapear tipo_sala a equipamiento
+                for col in df.select_dtypes(include=['object', 'string']).columns:
+                     if pd.notna(row[col]): row[col] = str(row[col]).strip()
+                sala_id = row.get('sala_id');
+                if 'capacidad' not in df.columns: raise DataLoaderError("Archivo salas falta 'capacidad'.")
+                capacidad_val = row.get('capacidad', '0'); tipo_sala = row.get('tipo_sala', 'Regular'); nombre_nivel = row.get('nombre_nivel', 'Todos')
+                try: capacidad = int(float(capacidad_val))
+                except: print(f"Advertencia: Capacidad inválida sala {sala_id}. Usando 0."); capacidad = 0
                 equipamiento = []
-                if tipo_sala.lower() != 'regular' and tipo_sala:
-                    # Considerar si tipo_sala puede tener múltiples equipos separados por comas, etc.
-                    equipamiento = [eq.strip() for eq in tipo_sala.split(',')] # Ejemplo: "Proyector, Pizarra"
-
-                sala = Sala(
-                    id=sala_id,
-                    nombre=sala_id, # Usar ID como nombre
-                    capacidad=capacidad,
-                    nivel=nombre_nivel.lower(), # Guardar en minúsculas
-                    equipamiento=equipamiento
-                )
-
-                if sala_id in self.salas_map_id:
-                     print(f"Advertencia: ID de sala duplicado '{sala_id}'. Se sobrescribirá.")
+                if isinstance(tipo_sala, str) and tipo_sala.lower() != 'regular' and tipo_sala: equipamiento = [eq.strip() for eq in tipo_sala.split(',')]
+                sala = Sala( id=sala_id, nombre=sala_id, capacidad=capacidad, nivel=str(nombre_nivel).lower(), equipamiento=equipamiento )
+                if sala_id in self.salas_map_id: print(f"Advertencia: ID sala duplicado '{sala_id}'.")
                 self.salas_map_id[sala_id] = sala
-
             print(f"Salas cargadas: {len(self.salas_map_id)}")
-            if not self.salas_map_id:
-                 raise DataLoaderError("No se cargaron salas.")
+            if not self.salas_map_id: raise DataLoaderError("No se cargaron salas válidas.")
             return list(self.salas_map_id.values())
+        except FileNotFoundError: raise DataLoaderError(f"Archivo salas no encontrado: {archivo_xlsx}")
+        except KeyError as e: raise DataLoaderError(f"Columna faltante en {archivo_xlsx}: {e}")
+        except Exception as e: import traceback; print(f"Error inesperado cargando salas:"); traceback.print_exc(); raise DataLoaderError(f"Error inesperado cargando salas: {e}")
 
-        except FileNotFoundError:
-             raise DataLoaderError(f"Archivo de salas no encontrado: {archivo_csv}")
-        except KeyError as e:
-             raise DataLoaderError(f"Columna esperada no encontrada en {archivo_csv}: {e}")
-        except Exception as e:
-            raise DataLoaderError(f"Error inesperado al cargar salas desde {archivo_csv}: {e}")
-
-
-    def cargar_requisitos_clase(self, archivo_csv):
-        """Carga los requisitos de clase desde tabla_minable."""
-        print(f"Cargando requisitos de clase desde: {archivo_csv}")
+    def cargar_requisitos_clase(self, archivo_xlsx):
+        """Carga los requisitos de clase desde tabla_minable (.xlsx)."""
+        print(f"Cargando requisitos de clase desde: {archivo_xlsx}")
+        # *** YA NO NECESITA 'profesor_id', pero SÍ necesita profesores cargados ***
         if not self.profesores_map_id:
-             raise DataLoaderError("Se deben cargar los profesores antes de los requisitos.")
+             raise DataLoaderError("Se deben cargar los profesores antes.")
 
         try:
-            # Leer con dtype para IDs y columnas binarias de días si es posible
-            dtypes = {'requisito_id': str, 'profesor_id': str} # Añadir profesor_id si existe
+            dtypes = {'requisito_id': str} # Ya no necesitamos dtype para profesor_id
+            df = pd.read_excel(archivo_xlsx, dtype=dtypes)
+            df.columns = df.columns.str.strip().str.lower()
+
+            # Verificar columnas de días
             day_cols = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes']
-            # Leer columnas de días como object y luego convertir para manejar errores
-            # for day in day_cols: dtypes[day] = 'Int64' # Usar Int64 para permitir NA
-
-            df = pd.read_csv(archivo_csv, dtype=dtypes)
-            df.columns = df.columns.str.strip().str.lower() # Normalizar
-
-            # Asegurar que las columnas de días esperadas existan
             for col in day_cols:
                 if col not in df.columns:
-                    # Intentar encontrar con mayúscula inicial
-                    col_cap = col.capitalize()
-                    if col_cap in df.columns:
-                         df.rename(columns={col_cap: col}, inplace=True)
+                    col_cap = col.capitalize(); found = False
+                    if col_cap in df.columns: df.rename(columns={col_cap: col}, inplace=True); found=True
                     else:
-                         raise KeyError(f"Falta la columna de día esperada: {col} (o {col_cap})")
+                         for config_day in DIAS_SEMANA:
+                             if config_day.lower() == col and config_day in df.columns:
+                                 df.rename(columns={config_day: col}, inplace=True); found=True; break
+                    if not found: raise KeyError(f"Falta columna de día: {col}")
 
+            # Eliminar filas con requisito_id vacío
+            initial_rows = len(df)
+            df.dropna(subset=['requisito_id'], inplace=True)
+            rows_dropped = initial_rows - len(df)
+            if rows_dropped > 0: print(f"Advertencia: Se eliminaron {rows_dropped} filas de tabla_minable por requisito_id vacío.")
 
             requisitos_cargados = []
             requisitos_omitidos = 0
             ids_requisitos_cargados = set()
 
-            print(f"Procesando {len(df)} filas de {archivo_csv}...")
+            lista_profesores = list(self.profesores_map_id.values())
+
+            print(f"Procesando {len(df)} filas de {archivo_xlsx}...")
             for index, row in df.iterrows():
-                row = row.copy() # Evitar warnings
-                 # Limpiar strings
-                for col in df.select_dtypes(include=['object']).columns:
-                    if pd.notna(row[col]):
-                        row[col] = str(row[col]).strip()
+                # Limpieza y conversión numérica
+                row = row.copy()
+                for col in df.select_dtypes(include=['object', 'string']).columns:
+                     if pd.notna(row[col]): row[col] = str(row[col]).strip()
+                numeric_cols_to_try = ['inscritos', 'horas_semanales_tipicas', 'duracion_sesion_horas', 'frecuencia_semanal', 'cantidad_docente'] + day_cols
+                for col in numeric_cols_to_try:
+                    if col in row.index: # Verificar si la columna existe
+                        if isinstance(row[col], str):
+                            try:
+                                val_float = float(row[col])
+                                row[col] = int(val_float) if val_float.is_integer() else int(val_float) # Truncar float
+                            except (ValueError, TypeError): pass
+                        elif pd.isna(row[col]): # Poner default si es NA
+                             if col in ['inscritos', 'horas_semanales_tipicas', 'frecuencia_semanal']: row[col] = 0
+                             elif col in ['duracion_sesion_horas', 'cantidad_docente']: row[col] = 1
+                             elif col in day_cols: row[col] = 0
+
 
                 req_id = row.get('requisito_id')
-                if not req_id:
-                     print(f"Advertencia: Fila {index+2} omitida por falta de requisito_id.")
-                     requisitos_omitidos += 1
-                     continue
-
-                if req_id in ids_requisitos_cargados:
-                     print(f"Advertencia: requisito_id duplicado '{req_id}' en fila {index+2}. Omitiendo duplicado.")
-                     requisitos_omitidos += 1
-                     continue
+                if not req_id or req_id in ids_requisitos_cargados: continue
 
                 try:
-                    # --- Identificar Profesor ---
-                    profesor_asignado = None
-                    prof_id_en_tabla = row.get('profesor_id') # Asume existe columna profesor_id
-                    nombre_prof = row.get('nombre_profesor', '')
-                    apellido_prof = row.get('apellido_profesor', '')
-                    prof_nombre_completo = f"{nombre_prof} {apellido_prof}".strip()
-
-                    if prof_id_en_tabla and pd.notna(prof_id_en_tabla):
-                        profesor_asignado = self.profesores_map_id.get(prof_id_en_tabla)
-                        if not profesor_asignado:
-                             print(f"Advertencia Req {req_id}: Profesor ID '{prof_id_en_tabla}' no encontrado en la lista de profesores.")
-                             # Podríamos intentar buscar por nombre como fallback
-                             if prof_nombre_completo in self.profesores_map_nombre:
-                                 profesor_asignado = self.profesores_map_nombre[prof_nombre_completo]
-                                 print(f"--> Encontrado por nombre: '{prof_nombre_completo}'")
-                             else:
-                                print(f"--> Tampoco encontrado por nombre. Omitiendo requisito.")
-                                requisitos_omitidos += 1
-                                continue
-                        # else: # Verificación opcional si nombre e ID coinciden
-                        #    if profesor_asignado.nombre != prof_nombre_completo and prof_nombre_completo:
-                        #         print(f"Advertencia Req {req_id}: Nombre de profesor en tabla ('{prof_nombre_completo}') no coincide con nombre para ID {prof_id_en_tabla} ('{profesor_asignado.nombre}').")
-                    elif prof_nombre_completo:
-                         # Buscar solo por nombre si no hay ID en tabla_minable
-                         profesor_asignado = self.profesores_map_nombre.get(prof_nombre_completo)
-                         if not profesor_asignado:
-                             print(f"Advertencia Req {req_id}: Profesor '{prof_nombre_completo}' no encontrado y no hay profesor_id. Omitiendo requisito.")
-                             requisitos_omitidos += 1
-                             continue
+                    # --- Determinar Profesores Elegibles por SECCION ---
+                    requisito_seccion_val = row.get('seccion') # Obtener valor
+                    if pd.isna(requisito_seccion_val):
+                        print(f"Advertencia Req {req_id}: Columna 'seccion' vacía. Asumiendo 'Todos'.")
+                        requisito_seccion = 'todos'
                     else:
-                         # Ni ID ni nombre
-                         print(f"Advertencia Req {req_id}: No se especificó profesor (ni por ID ni por nombre). Omitiendo requisito.")
+                        requisito_seccion = str(requisito_seccion_val).strip().lower()
+
+                    profesores_elegibles = []
+                    for prof in lista_profesores:
+                         prof_seccion = getattr(prof, 'seccion_primaria', '').lower()
+                         # Lógica de Matching: Coincidencia exacta O requisito es 'todos'
+                         if requisito_seccion == 'todos' or requisito_seccion == prof_seccion:
+                              profesores_elegibles.append(prof)
+
+                    if not profesores_elegibles:
+                         # Si nadie coincide exactamente y NO es 'todos', quizás flexibilizar?
+                         # Por ahora, omitimos si no hay elegibles estrictos.
+                         print(f"Advertencia Req {req_id}: No se encontraron profesores elegibles para sección '{requisito_seccion}'. Omitiendo.")
                          requisitos_omitidos += 1
                          continue
+                    # -----------------------------------------------------
 
-                    # --- Extraer otros datos ---
+                    # --- Extraer otros datos y validar ---
+                    required_cols_check = ['materia_id', 'nombre_materia', 'nivel', 'curso_id', 'seccion',
+                                           'inscritos', 'horas_semanales_tipicas', 'duracion_sesion_horas',
+                                           'frecuencia_semanal', 'clase_compartida', 'horario_entrada', 'horario_salida',
+                                           'cantidad_docente'] + day_cols
+                    missing_cols = [col for col in required_cols_check if col not in df.columns]
+                    if missing_cols: print(f"Advertencia Req {req_id}: Faltan columnas: {missing_cols}. Omitiendo."); requisitos_omitidos += 1; continue
+
                     materia_id = row.get('materia_id', '')
                     materia_nombre = row.get('nombre_materia', '')
                     nivel = row.get('nivel', '')
-                    curso_id = row.get('curso_id', '') # Grupo específico
-                    seccion = row.get('seccion', '') # Contexto materia
-
-                    inscritos_str = str(row.get('inscritos', '0')).strip()
-                    required_slots_str = str(row.get('horas_semanales_tipicas', '0')).strip()
-                    slots_per_session_str = str(row.get('duracion_sesion_horas', '1')).strip() # Default 1
-                    frecuencia_str = str(row.get('frecuencia_semanal', '0')).strip()
-
-                    # Convertir a números con validación
+                    curso_id = row.get('curso_id', '')
+                    seccion = row.get('seccion', '') # Guardamos la sección original del requisito
+                    cantidad_docente_val = row.get('cantidad_docente', 1)
+                    inscritos_val = row.get('inscritos', 0)
+                    required_slots_val = row.get('horas_semanales_tipicas', 0)
+                    slots_per_session_val = row.get('duracion_sesion_horas', 1)
+                    frecuencia_val = row.get('frecuencia_semanal', 0)
                     try:
-                        inscritos = int(float(inscritos_str))
-                        required_slots = int(float(required_slots_str))
-                        slots_per_session = int(float(slots_per_session_str))
-                        frecuencia = int(float(frecuencia_str))
+                        inscritos = int(float(inscritos_val))
+                        required_slots = int(float(required_slots_val))
+                        slots_per_session = int(float(slots_per_session_val))
+                        frecuencia = int(float(frecuencia_val))
+                        cantidad_docente = int(float(cantidad_docente_val))
                         if slots_per_session <= 0: slots_per_session = 1
-                    except (ValueError, TypeError) as e:
-                        print(f"Advertencia Req {req_id}: Error convirtiendo números (inscritos, horas, duracion, frec): {e}. Omitiendo.")
-                        requisitos_omitidos += 1
-                        continue
+                        if cantidad_docente <= 0: cantidad_docente = 1
+                    except (ValueError, TypeError) as e: print(f"Advertencia Req {req_id}: Error convirtiendo números: {e}. Omitiendo."); requisitos_omitidos += 1; continue
 
-                    # Validar consistencia de horas
-                    if required_slots > 0 and frecuencia * slots_per_session != required_slots:
-                        print(f"Advertencia Req {req_id}: Horas semanales ({required_slots}) no coincide con frecuencia ({frecuencia}) * duración ({slots_per_session}). Se usará required_slots={required_slots}.")
-                    elif required_slots <= 0:
-                         print(f"Advertencia Req {req_id}: Horas semanales es 0 o negativo ({required_slots}). Omitiendo.")
-                         requisitos_omitidos += 1
-                         continue
+                    # Validaciones de horas
+                    if required_slots > 0 and frecuencia > 0 and slots_per_session > 0 and frecuencia * slots_per_session != required_slots: print(f"Advertencia Req {req_id}: Hrs sem ({required_slots}) != Freq ({frecuencia}) * Dur ({slots_per_session}).")
+                    elif required_slots <= 0: print(f"Advertencia Req {req_id}: Hrs sem <= 0. Omitiendo."); requisitos_omitidos += 1; continue
+                    elif frecuencia <= 0 or slots_per_session <= 0: print(f"Advertencia Req {req_id}: Freq o Dur <= 0. Omitiendo."); requisitos_omitidos += 1; continue
 
                     shared_class_group = row.get('clase_compartida', 'Individual')
-                    if pd.isna(shared_class_group) or shared_class_group.lower() == 'individual':
-                        shared_class_group = None
-                    # else: # Limpiar por si acaso
-                    #     shared_class_group = shared_class_group.strip()
-
-                    is_orquestal = curso_id.lower() == 'orquestal' # Ajustar si la condición es diferente
-
-                    # Calcular slots permitidos (usa función auxiliar)
+                    if pd.isna(shared_class_group) or str(shared_class_group).lower() == 'individual': shared_class_group = None
+                    else: shared_class_group = str(shared_class_group).strip()
+                    is_orquestal = str(curso_id).lower() == 'orquestal'
                     allowed_slots = self._get_allowed_slots(row)
-                    if not allowed_slots:
-                         print(f"Advertencia Req {req_id}: No se pudieron determinar slots válidos. Omitiendo requisito.")
-                         requisitos_omitidos += 1
-                         continue
+                    if not allowed_slots: print(f"Advertencia Req {req_id}: No hay slots válidos. Omitiendo."); requisitos_omitidos += 1; continue
 
                     # --- Crear objeto RequisitoClase ---
                     requisito = RequisitoClase(
                         id=req_id,
-                        profesor_asignado=profesor_asignado,
-                        materia_id=materia_id,
-                        materia_nombre=materia_nombre,
-                        nivel=nivel,
-                        curso_id=curso_id,
-                        seccion=seccion,
-                        inscritos=inscritos,
-                        required_slots=required_slots,
-                        slots_per_session=slots_per_session,
-                        allowed_slots=allowed_slots,
-                        shared_class_group=shared_class_group,
-                        is_orquestal=is_orquestal
+                        profesores_elegibles=profesores_elegibles, # Lista de elegibles
+                        cantidad_docente=cantidad_docente,
+                        materia_id=materia_id, materia_nombre=materia_nombre, nivel=nivel,
+                        curso_id=curso_id, seccion=seccion, # Guardar sección original
+                        inscritos=inscritos, required_slots=required_slots,
+                        slots_per_session=slots_per_session, allowed_slots=allowed_slots,
+                        shared_class_group=shared_class_group, is_orquestal=is_orquestal
                     )
                     requisitos_cargados.append(requisito)
                     ids_requisitos_cargados.add(req_id)
 
-                except KeyError as e:
-                    print(f"Advertencia: Falta la columna '{e}' al procesar fila {index+2} (Req ID: {req_id if req_id else 'N/A'}). Omitiendo requisito.")
-                    requisitos_omitidos += 1
-                except (ValueError, TypeError) as e:
-                     print(f"Advertencia: Error de tipo/formato al procesar fila {index+2} (Req ID: {req_id if req_id else 'N/A'}): {e}. Omitiendo requisito.")
-                     requisitos_omitidos += 1
-                except Exception as e:
-                     print(f"Advertencia: Error inesperado procesando fila {index+2} (Req ID: {req_id if req_id else 'N/A'}): {e}. Omitiendo requisito.")
-                     requisitos_omitidos += 1
+                # ... (Manejo de excepciones igual) ...
+                except KeyError as e: print(f"Advertencia: Falta columna '{e}' fila {index+2} (Req ID: {req_id}). Omitiendo."); requisitos_omitidos += 1
+                except (ValueError, TypeError) as e: print(f"Advertencia: Error tipo/formato fila {index+2} (Req ID: {req_id}): {e}. Omitiendo."); requisitos_omitidos += 1
+                except Exception as e: print(f"Advertencia: Error inesperado fila {index+2} (Req ID: {req_id}): {e}. Omitiendo."); requisitos_omitidos += 1
 
 
             self.requisitos = requisitos_cargados
             print(f"Carga finalizada. Requisitos válidos: {len(self.requisitos)}. Filas omitidas/con error: {requisitos_omitidos}")
             if not self.requisitos:
-                 # Decidir si lanzar error o permitir continuar con 0 requisitos
                  print("Error fatal: No se cargaron requisitos de clase válidos.")
                  raise DataLoaderError("No se cargaron requisitos de clase válidos.")
-                 # return [] # Alternativa: devolver lista vacía
-
-            # Agrupar requisitos por grupo compartido para fácil acceso posterior
             self.shared_groups = {}
             if self.requisitos:
                 for req in self.requisitos:
                     if req.shared_class_group:
                         self.shared_groups.setdefault(req.shared_class_group, []).append(req)
-
             return self.requisitos
 
-        except FileNotFoundError:
-             raise DataLoaderError(f"Archivo de requisitos no encontrado: {archivo_csv}")
-        except KeyError as e: # Capturar KeyErrors que ocurren al acceder a df antes del bucle
-             raise DataLoaderError(f"Columna esperada no encontrada en {archivo_csv} (puede ser de días u otra): {e}")
-        except Exception as e:
-            # Loggear el traceback completo podría ser útil aquí
-            import traceback
-            print(f"Error fatal inesperado al cargar requisitos desde {archivo_csv}: {e}")
-            traceback.print_exc()
-            raise DataLoaderError(f"Error fatal inesperado al cargar requisitos desde {archivo_csv}: {e}")
+        except FileNotFoundError: raise DataLoaderError(f"Archivo requisitos no encontrado: {archivo_xlsx}")
+        except KeyError as e: print(f"Error Clave/Columna en {archivo_xlsx}: {e}."); raise DataLoaderError(f"Columna faltante en {archivo_xlsx}: {e}")
+        except ImportError: print("Error: Necesitas 'openpyxl'."); raise DataLoaderError("Falta 'openpyxl'.")
+        except Exception as e: import traceback; print(f"Error fatal cargando requisitos:"); traceback.print_exc(); raise DataLoaderError(f"Error fatal cargando requisitos: {e}")
 
     def get_shared_groups(self):
-         """Devuelve el diccionario de grupos compartidos."""
          return getattr(self, 'shared_groups', {})
 
 # --- Fin de DataLoader ---

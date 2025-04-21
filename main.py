@@ -22,9 +22,9 @@ from utils.visualization import Visualizador # Necesita ser actualizado
 from config import GA_CONFIG # Cargar configuración del AG
 
 # --- Rutas a los archivos CSV (Ajustar según tu estructura) ---
-RUTA_PROFESORES_CSV = "db/Profesor.xlsx - Hoja1.csv"
-RUTA_SALAS_CSV = "db/Sala.xlsx - Hoja1.csv"
-RUTA_REQUISITOS_CSV = "db/tabla_minable.xlsx - Sheet1.csv"
+RUTA_PROFESORES_CSV = "db/Profesor.xlsx"
+RUTA_SALAS_CSV = "db/Sala.xlsx"
+RUTA_REQUISITOS_CSV = "db/tabla_minable.xlsx"
 RUTA_RESULTADOS = "resultados"
 
 def main():
