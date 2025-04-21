@@ -1,184 +1,111 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
-Operadores de cruzamiento para el algoritmo genético
+Operadores de cruzamiento para el algoritmo genético.
+Adaptados para inicializar Horario correctamente.
 """
-
 import random
+# Importar modelos actualizados
 from model.horario import Horario
+from model.evento import Evento
 from config import NUM_DIAS
 
 class OperadorCruce:
-    """
-    Clase base para los operadores de cruzamiento.
-    """
-    
+    """Clase base para operadores de cruzamiento."""
     def __init__(self, probabilidad=0.8):
-        """
-        Inicializa el operador de cruce.
-        
-        Args:
-            probabilidad: Probabilidad de aplicar el cruce (entre 0 y 1)
-        """
         self.probabilidad = probabilidad
-    
-    def cruzar(self, padre1, padre2):
-        """
-        Realiza el cruce entre dos individuos (horarios).
-        
-        Args:
-            padre1: Primer horario padre
-            padre2: Segundo horario padre
-            
-        Returns:
-            Tupla con dos horarios hijos
-        """
-        raise NotImplementedError("Método no implementado en clase base")
+
+    def cruzar(self, padre1: Horario, padre2: Horario):
+        """Realiza el cruce. Debe devolver dos nuevos objetos Horario."""
+        raise NotImplementedError
 
 
 class CruceDias(OperadorCruce):
-    """
-    Operador de cruce que intercambia días completos entre los padres.
-    """
-    
-    def cruzar(self, padre1, padre2):
-        """
-        Realiza el cruce por días entre dos horarios.
-        
-        Args:
-            padre1: Primer horario padre
-            padre2: Segundo horario padre
-            
-        Returns:
-            Tupla con dos horarios hijos
-        """
-        # Crear nuevos horarios vacíos
-        hijo1 = Horario()
-        hijo2 = Horario()
-        
-        # Seleccionar aleatoriamente los días a intercambiar
-        dias_cruce = set(random.sample(range(NUM_DIAS), random.randint(1, NUM_DIAS-1)))
-        
-        # Copiar eventos según los días seleccionados
+    """Intercambia días completos entre padres."""
+    def cruzar(self, padre1: Horario, padre2: Horario):
+        # *** CORRECCIÓN: Inicializar hijos con listas maestras ***
+        hijo1 = Horario(padre1.profesores, padre1.salas, padre1.requisitos)
+        hijo2 = Horario(padre1.profesores, padre1.salas, padre1.requisitos)
+        # --------------------------------------------------------
+
+        dias_cruce = set(random.sample(range(NUM_DIAS), random.randint(1, max(1, NUM_DIAS-1)))) # Asegurar al menos 1 día
+
+        eventos_padre1_hijo1 = []
+        eventos_padre1_hijo2 = []
         for evento in padre1.eventos:
             if evento.dia in dias_cruce:
-                hijo2.agregar_evento(evento)
+                eventos_padre1_hijo2.append(evento)
             else:
-                hijo1.agregar_evento(evento)
-        
+                eventos_padre1_hijo1.append(evento)
+
+        eventos_padre2_hijo1 = []
+        eventos_padre2_hijo2 = []
         for evento in padre2.eventos:
             if evento.dia in dias_cruce:
-                hijo1.agregar_evento(evento)
+                eventos_padre2_hijo1.append(evento)
             else:
-                hijo2.agregar_evento(evento)
-        
+                eventos_padre2_hijo2.append(evento)
+
+        # Agregar eventos a los hijos (usando agregar_evento para actualizar mapas)
+        # Es más seguro reconstruir desde cero que añadir directamente a la lista
+        for e in eventos_padre1_hijo1: hijo1.agregar_evento(e, verificar_validez_completa=False)
+        for e in eventos_padre2_hijo1: hijo1.agregar_evento(e, verificar_validez_completa=False)
+
+        for e in eventos_padre1_hijo2: hijo2.agregar_evento(e, verificar_validez_completa=False)
+        for e in eventos_padre2_hijo2: hijo2.agregar_evento(e, verificar_validez_completa=False)
+
+        # Los horarios hijos ya tienen los índices y estado actualizados por agregar_evento
         return hijo1, hijo2
 
 
 class CruceEventos(OperadorCruce):
-    """
-    Operador de cruce que intercambia subconjuntos de eventos entre los padres.
-    """
-    
-    def cruzar(self, padre1, padre2):
-        """
-        Realiza el cruce por eventos entre dos horarios.
-        
-        Args:
-            padre1: Primer horario padre
-            padre2: Segundo horario padre
-            
-        Returns:
-            Tupla con dos horarios hijos
-        """
-        # Crear nuevos horarios vacíos
-        hijo1 = Horario()
-        hijo2 = Horario()
-        
-        # Determinar el punto de cruce (porcentaje de eventos a intercambiar)
-        punto_cruce = random.uniform(0.3, 0.7)
-        
-        # Calcular número de eventos a tomar de cada padre
-        num_eventos1 = int(len(padre1.eventos) * punto_cruce)
-        num_eventos2 = int(len(padre2.eventos) * punto_cruce)
-        
+    """Intercambia subconjuntos de eventos (representando sesiones)."""
+    def cruzar(self, padre1: Horario, padre2: Horario):
+        # *** CORRECCIÓN: Inicializar hijos con listas maestras ***
+        hijo1 = Horario(padre1.profesores, padre1.salas, padre1.requisitos)
+        hijo2 = Horario(padre1.profesores, padre1.salas, padre1.requisitos)
+        # --------------------------------------------------------
+
+        if not padre1.eventos or not padre2.eventos: # Si algún padre está vacío
+            return padre1.clonar(), padre2.clonar() # Devolver clones
+
+        # Elegir un punto de cruce (número de eventos a intercambiar)
+        max_eventos_intercambio = min(len(padre1.eventos), len(padre2.eventos))
+        if max_eventos_intercambio == 0: return padre1.clonar(), padre2.clonar()
+
+        num_eventos_intercambiar = random.randint(1, max(1, max_eventos_intercambio // 2)) # Intercambiar hasta la mitad
+
         # Seleccionar eventos aleatorios de cada padre
-        eventos_seleccionados1 = random.sample(padre1.eventos, num_eventos1)
-        eventos_seleccionados2 = random.sample(padre2.eventos, num_eventos2)
-        
-        # Crear conjuntos para verificación rápida
-        seleccionados1_keys = {e.get_key() for e in eventos_seleccionados1}
-        seleccionados2_keys = {e.get_key() for e in eventos_seleccionados2}
-        
-        # Construir primer hijo: eventos seleccionados del padre2 y restantes del padre1
-        for evento in eventos_seleccionados2:
-            hijo1.agregar_evento(evento)
-        
+        eventos_a_mover_p1 = random.sample(padre1.eventos, num_eventos_intercambiar)
+        eventos_a_mover_p2 = random.sample(padre2.eventos, num_eventos_intercambiar)
+
+        # Crear conjuntos de IDs de eventos para búsqueda rápida
+        ids_a_mover_p1 = {e.id_unico_evento for e in eventos_a_mover_p1}
+        ids_a_mover_p2 = {e.id_unico_evento for e in eventos_a_mover_p2}
+
+        # Construir Hijo 1: Eventos de P1 que NO se mueven + Eventos de P2 que SÍ se mueven
         for evento in padre1.eventos:
-            if evento.get_key() not in seleccionados1_keys:
-                hijo1.agregar_evento(evento)
-        
-        # Construir segundo hijo: eventos seleccionados del padre1 y restantes del padre2
-        for evento in eventos_seleccionados1:
-            hijo2.agregar_evento(evento)
-        
+            if evento.id_unico_evento not in ids_a_mover_p1:
+                hijo1.agregar_evento(evento, verificar_validez_completa=False)
+        for evento in eventos_a_mover_p2: # Mover los seleccionados de P2
+            hijo1.agregar_evento(evento, verificar_validez_completa=False) # Puede generar conflictos!
+
+        # Construir Hijo 2: Eventos de P2 que NO se mueven + Eventos de P1 que SÍ se mueven
         for evento in padre2.eventos:
-            if evento.get_key() not in seleccionados2_keys:
-                hijo2.agregar_evento(evento)
-        
+            if evento.id_unico_evento not in ids_a_mover_p2:
+                hijo2.agregar_evento(evento, verificar_validez_completa=False)
+        for evento in eventos_a_mover_p1: # Mover los seleccionados de P1
+             hijo2.agregar_evento(evento, verificar_validez_completa=False) # Puede generar conflictos!
+
+        # Nota: Este cruce es propenso a crear hijos inválidos (solapamientos).
+        # El Evaluador los penalizará fuertemente.
+        # Podríamos añadir una fase de "reparación" aquí, pero aumenta la complejidad.
+
+        # Asegurar que los índices y estado estén actualizados (agregar_evento debería hacerlo)
+        # hijo1._reconstruir_indices_y_estado() # Probablemente redundante
+        # hijo2._reconstruir_indices_y_estado() # Probablemente redundante
+
         return hijo1, hijo2
 
 
-class CruceMateriasSeccion(OperadorCruce):
-    """
-    Operador de cruce que intercambia todas las asignaciones de materias-secciones específicas.
-    """
-    
-    def cruzar(self, padre1, padre2):
-        """
-        Realiza el cruce por materias-secciones entre dos horarios.
-        
-        Args:
-            padre1: Primer horario padre
-            padre2: Segundo horario padre
-            
-        Returns:
-            Tupla con dos horarios hijos
-        """
-        # Crear nuevos horarios vacíos
-        hijo1 = Horario()
-        hijo2 = Horario()
-        
-        # Obtener todas las materias-secciones únicas de ambos padres
-        materias_secciones1 = {(e.materia_seccion.materia.id, e.materia_seccion.seccion) 
-                              for e in padre1.eventos}
-        materias_secciones2 = {(e.materia_seccion.materia.id, e.materia_seccion.seccion) 
-                              for e in padre2.eventos}
-        
-        todas_materias_secciones = materias_secciones1.union(materias_secciones2)
-        
-        # Seleccionar un subconjunto aleatorio para intercambiar
-        if not todas_materias_secciones:
-            # Si no hay materias para intercambiar, devolver copias de los padres
-            return padre1.clonar(), padre2.clonar()
-        
-        num_intercambiar = random.randint(1, min(len(todas_materias_secciones), max(1, len(todas_materias_secciones) // 3)))
-        materias_intercambiar = set(random.sample(list(todas_materias_secciones), num_intercambiar))
-        
-        # Construir los hijos
-        for evento in padre1.eventos:
-            ms_key = (evento.materia_seccion.materia.id, evento.materia_seccion.seccion)
-            if ms_key in materias_intercambiar:
-                hijo2.agregar_evento(evento)
-            else:
-                hijo1.agregar_evento(evento)
-        
-        for evento in padre2.eventos:
-            ms_key = (evento.materia_seccion.materia.id, evento.materia_seccion.seccion)
-            if ms_key in materias_intercambiar:
-                hijo1.agregar_evento(evento)
-            else:
-                hijo2.agregar_evento(evento)
-        
-        return hijo1, hijo2
+# CruceMateriasSeccion probablemente ya no es relevante o necesita rediseño completo
+# class CruceMateriasSeccion(OperadorCruce): ...

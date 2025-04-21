@@ -1,253 +1,165 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
-Operadores de mutación para el algoritmo genético
+Operadores de mutación para el algoritmo genético.
+Adaptados para RequisitoClase y nueva validación de Horario.
+Revisado para eliminar acceso a profesor_asignado.
 """
-
 import random
 import copy
 from config import NUM_DIAS, NUM_PERIODOS
+# Importar modelos actualizados
+from model.horario import Horario
+from model.evento import Evento
+from model.sala import Sala
+from model.profesor import Profesor
+from model.requisito_clase import RequisitoClase # Importar RequisitoClase
 
 class OperadorMutacion:
-    """
-    Clase base para los operadores de mutación.
-    """
-    
-    def __init__(self, probabilidad=0.2):
-        """
-        Inicializa el operador de mutación.
-        
-        Args:
-            probabilidad: Probabilidad de aplicar la mutación a cada individuo
-        """
-        self.probabilidad = probabilidad
-    
-    def mutar(self, horario):
-        """
-        Aplica la mutación al horario dado.
-        
-        Args:
-            horario: Objeto Horario a mutar
-            
-        Returns:
-            Boolean: True si se realizó la mutación, False en caso contrario
-        """
-        if random.random() < self.probabilidad:
-            return self._aplicar_mutacion(horario)
+    def __init__(self, probabilidad=0.2): self.probabilidad = probabilidad
+    def mutar(self, horario: Horario):
+        if random.random() < self.probabilidad: return self._aplicar_mutacion(horario)
         return False
-    
-    def _aplicar_mutacion(self, horario):
-        """
-        Método interno para aplicar la mutación específica.
-        Debe ser implementado en las subclases.
-        
-        Args:
-            horario: Objeto Horario a mutar
-            
-        Returns:
-            Boolean: True si se realizó la mutación, False en caso contrario
-        """
-        raise NotImplementedError("Método no implementado en clase base")
-
+    def _aplicar_mutacion(self, horario: Horario) -> bool: raise NotImplementedError
 
 class MutacionCambioHorario(OperadorMutacion):
-    """
-    Operador de mutación que cambia el día y/o hora de un evento aleatorio.
-    """
-    
-    def _aplicar_mutacion(self, horario):
-        """
-        Cambia el horario (día, hora) de un evento aleatorio.
-        
-        Args:
-            horario: Objeto Horario a mutar
-            
-        Returns:
-            Boolean: True si se realizó la mutación, False en caso contrario
-        """
-        if not horario.eventos:
-            return False
-        
-        # Seleccionar un evento aleatorio
-        evento = random.choice(horario.eventos)
-        
-        # Guardar coordenadas temporales originales
-        dia_original = evento.dia
-        hora_original = evento.hora
-        
-        # Generar nuevas coordenadas temporales
-        nuevo_dia = random.randint(0, NUM_DIAS - 1)
-        nueva_hora = random.randint(0, NUM_PERIODOS - 1)
-        
-        # Si son iguales a las originales, no hay cambio
-        if nuevo_dia == dia_original and nueva_hora == hora_original:
-            return False
-        
-        # Crear una copia del evento con las nuevas coordenadas
-        nuevo_evento = copy.deepcopy(evento)
-        nuevo_evento.dia = nuevo_dia
-        nuevo_evento.hora = nueva_hora
-        
-        # Verificar si hay conflictos con el nuevo horario
-        if (horario.tiene_conflicto_profesor(nuevo_evento) or
-            horario.tiene_conflicto_sala(nuevo_evento) or
-            horario.tiene_conflicto_grupo(nuevo_evento)):
-            return False
-        
-        # Si no hay conflictos, actualizar el evento
-        evento.dia = nuevo_dia
-        evento.hora = nueva_hora
-        
-        # Actualizar índices internos del horario
-        horario._actualizar_indices()
-        
-        return True
-
+    """Cambia el día y/o hora de inicio de un evento aleatorio."""
+    def _aplicar_mutacion(self, horario: Horario) -> bool:
+        if not horario.eventos: return False
+        evento_original = random.choice(horario.eventos)
+        # Usar evento.requisito
+        requisito = evento_original.requisito
+        slots_permitidos = requisito.allowed_slots
+        if not slots_permitidos: return False
+        slot_actual = (evento_original.dia, evento_original.hora)
+        posibles_nuevos_slots = [s for s in slots_permitidos if s != slot_actual]
+        if not posibles_nuevos_slots: return False
+        nuevo_dia, nueva_hora_inicio = random.choice(posibles_nuevos_slots)
+        # Usar evento.profesor (el que ya fue elegido para este evento)
+        evento_tentativo = Evento(
+            requisito=requisito,
+            profesor_elegido=evento_original.profesor, # Usa el profesor ya asignado a este evento
+            sala=evento_original.sala,
+            dia=nuevo_dia,
+            hora=nueva_hora_inicio
+        )
+        # Lógica quitar/agregar/revertir
+        if horario.quitar_evento(evento_original):
+             if horario.agregar_evento(evento_tentativo): return True
+             else: horario.agregar_evento(evento_original, False); return False
+        else: print(f"Error Mut CH: No quitó evt {evento_original.id_unico_evento}"); return False
 
 class MutacionCambioSala(OperadorMutacion):
-    """
-    Operador de mutación que cambia la sala asignada a un evento aleatorio.
-    """
-    
-    def __init__(self, probabilidad=0.2, salas=None):
-        """
-        Inicializa el operador de mutación con lista de salas disponibles.
-        
-        Args:
-            probabilidad: Probabilidad de aplicar la mutación
-            salas: Lista de objetos Sala disponibles
-        """
+    """Cambia la sala asignada a un evento aleatorio."""
+    def __init__(self, probabilidad=0.2, salas: list[Sala]=None):
         super().__init__(probabilidad)
-        self.salas = salas or []
-    
-    def _aplicar_mutacion(self, horario):
-        """
-        Cambia la sala de un evento aleatorio.
-        
-        Args:
-            horario: Objeto Horario a mutar
-            
-        Returns:
-            Boolean: True si se realizó la mutación, False en caso contrario
-        """
-        if not horario.eventos or not self.salas:
-            return False
-        
-        # Seleccionar un evento aleatorio
-        evento = random.choice(horario.eventos)
-        
-        # Buscar salas adecuadas (diferente a la actual y compatible con el nivel)
-        salas_adecuadas = [s for s in self.salas 
-                          if s.id != evento.sala.id 
-                          and s.es_adecuada_para_nivel(evento.materia_seccion.materia.nivel)
-                          and s.tiene_equipamiento(evento.materia_seccion.materia.requiere_equipamiento)]
-        
-        if not salas_adecuadas:
-            return False
-        
-        # Seleccionar una sala aleatoria entre las adecuadas
-        nueva_sala = random.choice(salas_adecuadas)
-        
-        # Crear una copia del evento con la nueva sala
-        nuevo_evento = copy.deepcopy(evento)
-        nuevo_evento.sala = nueva_sala
-        
-        # Verificar si hay conflictos con la nueva sala
-        if horario.tiene_conflicto_sala(nuevo_evento):
-            return False
-        
-        # Si no hay conflictos, actualizar el evento
-        evento.sala = nueva_sala
-        
-        # Actualizar índices internos del horario
-        horario._actualizar_indices()
-        
-        return True
+        self.salas_maestra = salas if salas else []
+        self.salas_por_nivel = {}
+        for sala in self.salas_maestra: self.salas_por_nivel.setdefault(sala.nivel, []).append(sala)
 
+    def _aplicar_mutacion(self, horario: Horario) -> bool:
+        if not horario.eventos or not self.salas_maestra: return False
+        evento_original = random.choice(horario.eventos)
+        # Usar evento.requisito
+        requisito = evento_original.requisito
+        # Buscar salas (ya usaba requisito correctamente)
+        salas_filtradas_nivel = [s for s in self.salas_maestra if s.es_adecuada_para_nivel(requisito.nivel)]
+        salas_candidatas_cap = [s for s in salas_filtradas_nivel if s.capacidad >= requisito.inscritos]
+        salas_posibles = [s for s in salas_candidatas_cap if s.id != evento_original.sala.id]
+        if not salas_posibles: return False
+        random.shuffle(salas_posibles)
+        for sala_nueva in salas_posibles:
+             # Usar evento.profesor
+             evento_tentativo = Evento(
+                 requisito=requisito,
+                 profesor_elegido=evento_original.profesor, # Usa el profesor ya asignado
+                 sala=sala_nueva,
+                 dia=evento_original.dia,
+                 hora=evento_original.hora
+             )
+             # Lógica quitar/agregar/revertir
+             if horario.quitar_evento(evento_original):
+                  if horario.agregar_evento(evento_tentativo): return True
+                  else: horario.agregar_evento(evento_original, False)
+             else: print(f"Error Mut CS: No quitó evt {evento_original.id_unico_evento}"); return False
+        return False
 
 class MutacionIntercambio(OperadorMutacion):
-    """
-    Operador de mutación que intercambia los horarios entre dos eventos.
-    """
-    
-    def _aplicar_mutacion(self, horario):
-        """
-        Intercambia los horarios (día, hora) entre dos eventos aleatorios.
-        
-        Args:
-            horario: Objeto Horario a mutar
-            
-        Returns:
-            Boolean: True si se realizó la mutación, False en caso contrario
-        """
-        if len(horario.eventos) < 2:
+    """Intercambia los slots de inicio entre dos eventos aleatorios."""
+    def _aplicar_mutacion(self, horario: Horario) -> bool:
+        if len(horario.eventos) < 2: return False
+        # Usar sample para asegurar que son diferentes
+        try:
+            evento1, evento2 = random.sample(horario.eventos, 2)
+        except ValueError: # No hay suficientes eventos para elegir 2
             return False
-        
-        # Seleccionar dos eventos aleatorios diferentes
-        eventos = random.sample(horario.eventos, 2)
-        evento1, evento2 = eventos[0], eventos[1]
-        
-        # Guardar coordenadas temporales originales
+            
         dia1, hora1 = evento1.dia, evento1.hora
         dia2, hora2 = evento2.dia, evento2.hora
-        
-        # Intercambiar temporalmente para verificar conflictos
-        evento1.dia, evento1.hora = dia2, hora2
-        evento2.dia, evento2.hora = dia1, hora1
-        
-        # Verificar si hay conflictos tras el intercambio
-        conflictos = False
-        
-        for evento in [evento1, evento2]:
-            if (horario.tiene_conflicto_profesor(evento) or
-                horario.tiene_conflicto_sala(evento) or
-                horario.tiene_conflicto_grupo(evento)):
-                conflictos = True
-                break
-        
-        if conflictos:
-            # Revertir el intercambio si hay conflictos
-            evento1.dia, evento1.hora = dia1, hora1
-            evento2.dia, evento2.hora = dia2, hora2
-            return False
-        
-        # Actualizar índices internos del horario
-        horario._actualizar_indices()
-        
-        return True
+        # Usar evento.requisito
+        req1 = evento1.requisito
+        req2 = evento2.requisito
+        # Simplificación (igual que antes)
+        if req1.slots_per_session != req2.slots_per_session: return False
+        if (dia2, hora2) not in req1.allowed_slots: return False
+        if (dia1, hora1) not in req2.allowed_slots: return False
+        # Usar evento.profesor
+        evento1_nuevo = Evento(req1, evento1.profesor, evento1.sala, dia2, hora2)
+        evento2_nuevo = Evento(req2, evento2.profesor, evento2.sala, dia1, hora1)
+        # Lógica quitar/agregar/revertir
+        q1_ok = horario.quitar_evento(evento1)
+        q2_ok = horario.quitar_evento(evento2)
+        if not q1_ok or not q2_ok:
+             if q1_ok: horario.agregar_evento(evento1, False)
+             if q2_ok: horario.agregar_evento(evento2, False)
+             # print(f"Error Mut Int: No quitó originales.") # Debug
+             return False
+        a1_ok = horario.agregar_evento(evento1_nuevo)
+        if a1_ok:
+            a2_ok = horario.agregar_evento(evento2_nuevo)
+            if a2_ok: return True # Exito
+            else: horario.quitar_evento(evento1_nuevo); horario.agregar_evento(evento1, False); horario.agregar_evento(evento2, False); return False # Revertir
+        else: horario.agregar_evento(evento1, False); horario.agregar_evento(evento2, False); return False # Revertir
+
+
+class MutacionCambioProfesor(OperadorMutacion):
+    """Cambia el profesor asignado a un evento por otro elegible."""
+    def _aplicar_mutacion(self, horario: Horario) -> bool:
+        if not horario.eventos: return False
+        evento_original = random.choice(horario.eventos)
+        # Usar evento.requisito
+        requisito = evento_original.requisito
+        profesores_elegibles = requisito.profesores_elegibles
+        alternativas = [p for p in profesores_elegibles if p.id != evento_original.profesor.id]
+        if not alternativas: return False
+        random.shuffle(alternativas)
+        for profesor_nuevo in alternativas:
+             evento_tentativo = Evento(
+                 requisito=requisito,
+                 profesor_elegido=profesor_nuevo, # Nuevo profesor
+                 sala=evento_original.sala,
+                 dia=evento_original.dia,
+                 hora=evento_original.hora
+             )
+             # Lógica quitar/agregar/revertir
+             if horario.quitar_evento(evento_original):
+                  if horario.agregar_evento(evento_tentativo): return True
+                  else: horario.agregar_evento(evento_original, False)
+             else: print(f"Error Mut CP: No quitó evt {evento_original.id_unico_evento}"); return False
+        return False
 
 
 class MutacionCompuesta(OperadorMutacion):
-    """
-    Operador de mutación que aplica una combinación de diferentes mutaciones.
-    """
-    
+    """Aplica una combinación de diferentes mutaciones."""
     def __init__(self, operadores=None):
-        """
-        Inicializa el operador compuesto con una lista de operadores.
-        
-        Args:
-            operadores: Lista de objetos OperadorMutacion
-        """
-        super().__init__(1.0)  # Siempre se intenta aplicar algún operador
-        self.operadores = operadores or []
-    
-    def _aplicar_mutacion(self, horario):
-        """
-        Aplica uno de los operadores de mutación disponibles de forma aleatoria.
-        
-        Args:
-            horario: Objeto Horario a mutar
-            
-        Returns:
-            Boolean: True si se realizó la mutación, False en caso contrario
-        """
-        if not self.operadores:
-            return False
-        
-        # Seleccionar un operador aleatorio
-        operador = random.choice(self.operadores)
-        
-        # Aplicar la mutación
-        return operador.mutar(horario)
+        super().__init__(1.0)
+        self.operadores = operadores if operadores else []
+    def _aplicar_mutacion(self, horario: Horario) -> bool:
+        if not self.operadores: return False
+        operador_elegido = random.choice(self.operadores)
+        try:
+            # Llamar a _aplicar_mutacion del operador elegido para forzar intento
+            return operador_elegido._aplicar_mutacion(horario)
+        except Exception as e:
+             print(f"Error aplicando mutación {operador_elegido.__class__.__name__}: {e}")
+             # import traceback; traceback.print_exc() # Descomentar para depurar
+             return False
