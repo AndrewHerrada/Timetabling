@@ -1,105 +1,96 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
-Clase para representar un evento (asignación de profesor-materia-sala-horario)
-en el sistema de generación de horarios
+Clase para representar un evento (asignación de requisito-sala-horario)
 """
+from model.requisito_clase import RequisitoClase
+from model.sala import Sala
+from model.profesor import Profesor # Aunque esté en requisito, puede ser útil tenerlo directo
+from config import DIAS_SEMANA, HORAS_DIA, NUM_PERIODOS # Para __str__ y validación
 
 class Evento:
     """
-    Clase que representa un evento o asignación completa en el horario.
-    Un evento es una tupla (profesor, materia, sección, sala, día, hora).
+    Clase que representa una asignación de un RequisitoClase a una Sala
+    en un día y hora específicos (potencialmente parte de un bloque).
     """
-    
-    def __init__(self, profesor, materia_seccion, sala, dia, hora):
+    def __init__(self, requisito: RequisitoClase, sala: Sala, dia: int, hora: int):
         """
-        Inicializa un nuevo evento.
-        
+        Inicializa un nuevo evento, representando el inicio de una sesión.
+
         Args:
-            profesor: Objeto Profesor asignado
-            materia_seccion: Objeto MateriaSecciones asignado
-            sala: Objeto Sala asignado
-            dia: Índice del día (0-4 para Lunes a Viernes)
-            hora: Índice de la hora (0-n según configuración)
+            requisito (RequisitoClase): El requisito de clase que se está programando.
+            sala (Sala): La sala asignada.
+            dia (int): Índice del día (0-N).
+            hora (int): Índice de la hora de inicio del slot/bloque (0-M).
         """
-        self.profesor = profesor
-        self.materia_seccion = materia_seccion
+        if not isinstance(requisito, RequisitoClase):
+             raise TypeError("El argumento 'requisito' debe ser un objeto RequisitoClase")
+        if not isinstance(sala, Sala):
+            raise TypeError("El argumento 'sala' debe ser un objeto Sala")
+
+        self.requisito = requisito
+        self.profesor = requisito.profesor_asignado # Acceso directo
         self.sala = sala
         self.dia = dia
-        self.hora = hora
-    
-    def get_key(self):
+        self.hora = hora # Hora de inicio del primer slot de la sesión
+
+        # Clave para identificar este evento específico (si es necesario distinguirlo de otros para el mismo requisito)
+        # Podría ser útil si un requisito tiene múltiples sesiones por semana.
+        # Usamos el ID del requisito y el slot de inicio como identificador básico.
+        self.id_unico_evento = f"{self.requisito.id}_{self.dia}_{self.hora}"
+
+
+    def get_slots_ocupados(self) -> list[tuple[int, int]]:
         """
-        Genera una clave única para el evento.
-        
-        Returns:
-            Tupla con los IDs y coordenadas temporales que identifican unívocamente el evento
+        Devuelve una lista de tuplas (dia, hora_slot) que ocupa este evento,
+        considerando la duración de la sesión.
         """
-        return (
-            self.profesor.id,
-            self.materia_seccion.materia.id,
-            self.materia_seccion.seccion,
-            self.sala.id,
-            self.dia,
-            self.hora
-        )
-    
-    def conflicto_profesor(self, otro_evento):
+        slots = []
+        for i in range(self.requisito.slots_per_session):
+            slot_hora = self.hora + i
+            # Verificar que el slot no exceda el número de periodos
+            if slot_hora < NUM_PERIODOS:
+                slots.append((self.dia, slot_hora))
+            else:
+                # Esto indicaría un problema en la lógica de asignación o configuración
+                print(f"Advertencia: Evento para req {self.requisito.id} en ({self.dia},{self.hora}) "
+                      f"con duración {self.requisito.slots_per_session} excede NUM_PERIODOS.")
+                break # No añadir slots inválidos
+        return slots
+
+    def get_key_recurso(self, tipo_recurso: str, slot_hora: int) -> tuple:
         """
-        Verifica si hay conflicto de profesor con otro evento.
-        
+        Genera una clave para verificar conflictos de un recurso específico
+        en un slot horario específico ocupado por este evento.
+
         Args:
-            otro_evento: Otro objeto Evento a comparar
-            
+            tipo_recurso (str): 'profesor', 'sala', 'grupo' (curso_id).
+            slot_hora (int): El índice de hora específico a verificar.
+
         Returns:
-            Boolean: True si hay conflicto (mismo profesor, día y hora), False en caso contrario
+            tuple: Clave para usar en los mapas de conflicto del Horario.
         """
-        return (self.profesor.id == otro_evento.profesor.id and
-                self.dia == otro_evento.dia and
-                self.hora == otro_evento.hora)
-    
-    def conflicto_sala(self, otro_evento):
-        """
-        Verifica si hay conflicto de sala con otro evento.
-        
-        Args:
-            otro_evento: Otro objeto Evento a comparar
-            
-        Returns:
-            Boolean: True si hay conflicto (misma sala, día y hora), False en caso contrario
-        """
-        return (self.sala.id == otro_evento.sala.id and
-                self.dia == otro_evento.dia and
-                self.hora == otro_evento.hora)
-    
-    def conflicto_grupo(self, otro_evento):
-        """
-        Verifica si hay conflicto de grupo/sección con otro evento.
-        
-        Args:
-            otro_evento: Otro objeto Evento a comparar
-            
-        Returns:
-            Boolean: True si hay conflicto (misma sección, día y hora), False en caso contrario
-        """
-        return (self.materia_seccion.seccion == otro_evento.materia_seccion.seccion and
-                self.dia == otro_evento.dia and
-                self.hora == otro_evento.hora)
-    
+        if tipo_recurso == 'profesor':
+            return (self.profesor.id, self.dia, slot_hora)
+        elif tipo_recurso == 'sala':
+            return (self.sala.id, self.dia, slot_hora)
+        elif tipo_recurso == 'grupo':
+            # Usar curso_id como identificador del grupo de estudiantes
+            return (self.requisito.curso_id, self.dia, slot_hora)
+        else:
+            raise ValueError(f"Tipo de recurso desconocido: {tipo_recurso}")
+
+
     def __str__(self):
-        """
-        Representación en string del evento.
-        
-        Returns:
-            String con la información básica del evento
-        """
-        from config import DIAS_SEMANA, HORAS_DIA
-        
+        """Representación en string del evento."""
         dia_str = DIAS_SEMANA[self.dia] if 0 <= self.dia < len(DIAS_SEMANA) else f"Día {self.dia}"
         hora_str = HORAS_DIA[self.hora] if 0 <= self.hora < len(HORAS_DIA) else f"Hora {self.hora}"
-        
-        return (f"Evento: {self.materia_seccion.materia.nombre} (Sección {self.materia_seccion.seccion}), "
-                f"Prof. {self.profesor.nombre}, "
-                f"Sala {self.sala.nombre}, "
-                f"{dia_str} {hora_str}")
+        duracion_str = f"(x{self.requisito.slots_per_session} slots)" if self.requisito.slots_per_session > 1 else ""
+
+        return (f"Evento({self.id_unico_evento}): {self.requisito.materia_nombre} ({self.requisito.curso_id}) "
+                f"- Prof. {self.profesor.nombre}, Sala {self.sala.nombre} "
+                f"- {dia_str} {hora_str} {duracion_str}")
+
+    def __repr__(self):
+         return f"Evento(req_id='{self.requisito.id}', dia={self.dia}, hora={self.hora}, sala='{self.sala.id}')"
+
+    # Métodos de conflicto ahora se manejan mejor en la clase Horario usando get_slots_ocupados

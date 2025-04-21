@@ -167,9 +167,9 @@ class Visualizador:
             horario: Objeto Horario a exportar
             writer: ExcelWriter para escribir
         """
-        # Crear lista de eventos
+    # Crear lista de eventos
         eventos_data = []
-        
+    
         for evento in horario.eventos:
             eventos_data.append({
                 'Día': DIAS_SEMANA[evento.dia],
@@ -183,6 +183,17 @@ class Visualizador:
         
         # Crear DataFrame
         df = pd.DataFrame(eventos_data)
+        
+        # Verificar si hay eventos para procesar
+        if df.empty:
+            # Si no hay eventos, crear un DataFrame con columnas vacías
+            df = pd.DataFrame(columns=[
+                'Día', 'Hora', 'Materia', 'Sección', 'Profesor', 'Sala', 'Nivel',
+                'Día_idx', 'Hora_idx'
+            ])
+            # Exportar a Excel
+            df.to_excel(writer, sheet_name='Lista_Completa', index=False)
+            return
         
         # Ordenar por día, hora, etc.
         df['Día_idx'] = df['Día'].apply(lambda x: DIAS_SEMANA.index(x))

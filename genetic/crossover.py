@@ -159,7 +159,11 @@ class CruceMateriasSeccion(OperadorCruce):
         todas_materias_secciones = materias_secciones1.union(materias_secciones2)
         
         # Seleccionar un subconjunto aleatorio para intercambiar
-        num_intercambiar = random.randint(1, max(1, len(todas_materias_secciones) // 3))
+        if not todas_materias_secciones:
+            # Si no hay materias para intercambiar, devolver copias de los padres
+            return padre1.clonar(), padre2.clonar()
+        
+        num_intercambiar = random.randint(1, min(len(todas_materias_secciones), max(1, len(todas_materias_secciones) // 3)))
         materias_intercambiar = set(random.sample(list(todas_materias_secciones), num_intercambiar))
         
         # Construir los hijos
