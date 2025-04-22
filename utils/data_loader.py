@@ -1,328 +1,396 @@
-# -*- coding: utf-8 -*-
-# filename: utils/data_loader.py
+"""
+Clase principal que implementa el solucionador del problema de timetabling
+"""
 
-import os
-import pandas as pd
-import numpy as np
 import datetime
-# Asegúrate que las rutas de importación sean correctas
+import pandas as pd
+import io
+from typing import List, Dict, Set, Tuple, Any, Optional
 from model.profesor import Profesor
 from model.sala import Sala
-from model.requisito_clase import RequisitoClase
-from config import DIAS_SEMANA, HORAS_DIA
+from model.curso import Curso
+from model.materia import Materia
+from model.periodo import Periodo
+from model.requisito import Requisito
+from model.horario import Horario
+from genetic.algoritmo_genetico import AlgoritmoGenetico
+from model.asignacion import Asignacion
+from model.horario import Horario
 
-# ... (DataLoaderError y __init__ sin cambios) ...
-class DataLoaderError(Exception): pass
 
-class DataLoader:
-    def __init__(self, config_horas_dia=HORAS_DIA, config_dias_semana=DIAS_SEMANA):
-        self.profesores_map_id = {}
-        self.profesores_map_nombre = {}
-        self.salas_map_id = {}
+class TimetablingSolver:
+    """
+    Clase principal para resolver el problema de timetabling.
+    Gestiona la carga de datos, ejecución del algoritmo y generación de resultados.
+    """
+    
+    def __init__(self, csv_data):
+        self.csv_data = csv_data
+        
+        # Periodos disponibles
+        self.periodos = {
+            'I': Periodo('I', '15:00', '16:00'),
+            'II': Periodo('II', '16:00', '17:00'),
+            'III': Periodo('III', '17:00', '18:00'),
+            'IV': Periodo('IV', '18:00', '19:00'),
+            'V': Periodo('V', '19:00', '20:00'),
+            'VI': Periodo('VI', '20:00', '21:00')
+        }
+        self.dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
+        
+        # Colecciones
         self.requisitos = []
-        self.dias_semana = config_dias_semana
-        try: self.slots_info = self._procesar_slots_config(config_horas_dia)
-        except DataLoaderError as e: print(f"Error fatal inicializando: {e}"); raise
-
-    # _procesar_slots_config, _map_time_to_slot_index, _get_allowed_slots sin cambios desde la versión .xlsx
-    def _procesar_slots_config(self, horas_dia_config):
-        slots = {}
-        if not horas_dia_config: raise DataLoaderError("HORAS_DIA vacía.")
-        for i, slot_str in enumerate(horas_dia_config):
-            try:
-                parts = slot_str.split('-'); start_str, end_str = parts[0], parts[1]
-                base_date = datetime.date(2024, 1, 1)
-                start_time = datetime.datetime.combine(base_date, datetime.datetime.strptime(start_str.strip(), '%H:%M').time())
-                end_time = datetime.datetime.combine(base_date, datetime.datetime.strptime(end_str.strip(), '%H:%M').time())
-                if end_time <= start_time: print(f"Advertencia: Slot {slot_str} fin <= inicio.")
-                slots[i] = {'idx': i, 'start': start_time, 'end': end_time, 'label': slot_str}
-            except Exception as e: raise DataLoaderError(f"Error procesando slot '{slot_str}': {e}")
-        if not slots: raise DataLoaderError("No se procesaron slots.")
-        return slots
-
-    def _map_time_to_slot_index(self, time_obj):
-        base_date = datetime.date(2024, 1, 1)
-        target_time = datetime.datetime.combine(base_date, time_obj)
-        for idx, info in self.slots_info.items():
-            if info['start'] <= target_time < info['end']: return idx
-        return None
-
-    def _get_allowed_slots(self, row):
-        allowed_slots = []
-        req_id_debug = row.get('requisito_id', 'N/A')
+        self.cursos = {}
+        self.profesores = {}
+        self.salas = {}
+        self.materias = {}
+    
+    def cargar_datos(self):
+        """Carga los datos desde el DataFrame."""
         try:
-            start_window, end_window = None, None
-            start_window_val = row['horario_entrada']; end_window_val = row['horario_salida']
-            time_formats = ['%H:%M:%S', '%H:%M']
-            if isinstance(start_window_val, datetime.time): start_window = start_window_val
-            else:
-                for fmt in time_formats:
-                    try: start_window = datetime.datetime.strptime(str(start_window_val).strip(), fmt).time(); break
-                    except ValueError: continue
-            if isinstance(end_window_val, datetime.time): end_window = end_window_val
-            else:
-                for fmt in time_formats:
-                    try: end_window = datetime.datetime.strptime(str(end_window_val).strip(), fmt).time(); break
-                    except ValueError: continue
-            if start_window is None or end_window is None: raise ValueError("Formato hora no reconocido")
-
-            base_date = datetime.date(2024, 1, 1)
-            start_window_dt = datetime.datetime.combine(base_date, start_window)
-            end_window_dt = datetime.datetime.combine(base_date, end_window)
-            if end_window_dt <= start_window_dt: end_window_dt = start_window_dt + datetime.timedelta(minutes=45) # Ajuste mínimo
-
-            allowed_days_indices = []
-            day_cols_map = {d.lower(): i for i, d in enumerate(self.dias_semana)}
-            for excel_col in row.index:
-                col_lower = str(excel_col).lower()
-                if col_lower in day_cols_map:
-                    if pd.notna(row[excel_col]):
-                        try:
-                            if int(row[excel_col]) == 1 or str(row[excel_col]).lower() == 'true':
-                                allowed_days_indices.append(day_cols_map[col_lower])
-                        except (ValueError, TypeError): pass
-
-            if not allowed_days_indices: return []
-
-            for day_idx in allowed_days_indices:
-                for slot_idx, slot_info in self.slots_info.items():
-                    if start_window_dt <= slot_info['start'] < end_window_dt:
-                        try: slots_needed = int(float(str(row.get('duracion_sesion_horas', '1')).strip()))
-                        except: slots_needed = 1
-                        if slots_needed <= 0: slots_needed = 1
-                        can_fit = True; last_slot_time = slot_info['start']
-                        if slots_needed > 0:
-                            for i in range(slots_needed):
-                                cur_idx = slot_idx + i
-                                if cur_idx >= len(self.slots_info): can_fit = False; break
-                                cur_info = self.slots_info[cur_idx]
-                                if i == slots_needed - 1: last_slot_time = cur_info['end']
-                                if i > 0 and cur_info['start'] != self.slots_info[cur_idx - 1]['end']: can_fit = False; break
-                            if last_slot_time > end_window_dt: can_fit = False
-                        else: can_fit = False
-                        if can_fit: allowed_slots.append((day_idx, slot_idx))
-
-        except Exception as e: print(f"Error procesando slots Req {req_id_debug}: {e}"); return []
-        if not allowed_slots: print(f"Advertencia Req {req_id_debug}: No hay slots válidos.")
-        return sorted(list(set(allowed_slots)))
-
-    # cargar_profesores y cargar_salas sin cambios respecto a la versión anterior
-    def cargar_profesores(self, archivo_xlsx):
-        print(f"Cargando profesores desde: {archivo_xlsx}")
-        try:
-            df = pd.read_excel(archivo_xlsx, dtype={'profesor_id': str})
-            df.columns = df.columns.str.strip().str.lower()
-            initial_rows = len(df); df.dropna(subset=['profesor_id', 'nombre', 'apellido'], inplace=True); rows_dropped = initial_rows - len(df)
-            if rows_dropped > 0: print(f"Advertencia: Se eliminaron {rows_dropped} filas de profesores vacías.")
-            self.profesores_map_id = {}; self.profesores_map_nombre = {}
-            for index, row in df.iterrows():
-                row = row.copy()
-                for col in df.select_dtypes(include=['object', 'string']).columns:
-                     if pd.notna(row[col]): row[col] = str(row[col]).strip()
-                prof_id = row.get('profesor_id'); nombre = row.get('nombre', ''); apellido = row.get('apellido', '')
-                nombre_completo = f"{nombre} {apellido}".strip(); categoria = row.get('categoria', 'Contrato'); seccion_primaria = row.get('seccion', '')
-                if isinstance(categoria, str) and categoria.lower() not in ['item', 'contrato']: categoria = 'Contrato'
-                elif not isinstance(categoria, str): categoria = 'Contrato'
-                profesor = Profesor( id=prof_id, nombre=nombre_completo, categoria=categoria.capitalize(), seccion_primaria=seccion_primaria )
-                if prof_id in self.profesores_map_id: print(f"Advertencia: ID prof duplicado '{prof_id}'.")
-                self.profesores_map_id[prof_id] = profesor
-                if nombre_completo not in self.profesores_map_nombre: self.profesores_map_nombre[nombre_completo] = profesor
-                else: print(f"Advertencia: Nombre prof duplicado '{nombre_completo}'.")
-            print(f"Profesores cargados: {len(self.profesores_map_id)}")
-            if not self.profesores_map_id: raise DataLoaderError("No se cargaron profesores válidos.")
-            return list(self.profesores_map_id.values())
-        except FileNotFoundError: raise DataLoaderError(f"Archivo profesores no encontrado: {archivo_xlsx}")
-        except KeyError as e: raise DataLoaderError(f"Columna faltante en {archivo_xlsx}: {e}")
-        except Exception as e: import traceback; print(f"Error inesperado cargando profesores:"); traceback.print_exc(); raise DataLoaderError(f"Error inesperado cargando profesores: {e}")
-
-    def cargar_salas(self, archivo_xlsx):
-        print(f"Cargando salas desde: {archivo_xlsx}")
-        try:
-            df = pd.read_excel( archivo_xlsx, dtype={'sala_id': str} ); df.columns = df.columns.str.strip().str.lower(); self.salas_map_id = {}
-            initial_rows = len(df); df.dropna(subset=['sala_id'], inplace=True); rows_dropped = initial_rows - len(df)
-            if rows_dropped > 0: print(f"Advertencia: Se eliminaron {rows_dropped} filas de salas vacías.")
-            for index, row in df.iterrows():
-                row = row.copy()
-                for col in df.select_dtypes(include=['object', 'string']).columns:
-                     if pd.notna(row[col]): row[col] = str(row[col]).strip()
-                sala_id = row.get('sala_id');
-                if 'capacidad' not in df.columns: raise DataLoaderError("Archivo salas falta 'capacidad'.")
-                capacidad_val = row.get('capacidad', '0'); tipo_sala = row.get('tipo_sala', 'Regular'); nombre_nivel = row.get('nombre_nivel', 'Todos')
-                try: capacidad = int(float(capacidad_val))
-                except: print(f"Advertencia: Capacidad inválida sala {sala_id}. Usando 0."); capacidad = 0
-                equipamiento = []
-                if isinstance(tipo_sala, str) and tipo_sala.lower() != 'regular' and tipo_sala: equipamiento = [eq.strip() for eq in tipo_sala.split(',')]
-                sala = Sala( id=sala_id, nombre=sala_id, capacidad=capacidad, nivel=str(nombre_nivel).lower(), equipamiento=equipamiento )
-                if sala_id in self.salas_map_id: print(f"Advertencia: ID sala duplicado '{sala_id}'.")
-                self.salas_map_id[sala_id] = sala
-            print(f"Salas cargadas: {len(self.salas_map_id)}")
-            if not self.salas_map_id: raise DataLoaderError("No se cargaron salas válidas.")
-            return list(self.salas_map_id.values())
-        except FileNotFoundError: raise DataLoaderError(f"Archivo salas no encontrado: {archivo_xlsx}")
-        except KeyError as e: raise DataLoaderError(f"Columna faltante en {archivo_xlsx}: {e}")
-        except Exception as e: import traceback; print(f"Error inesperado cargando salas:"); traceback.print_exc(); raise DataLoaderError(f"Error inesperado cargando salas: {e}")
-
-    def cargar_requisitos_clase(self, archivo_xlsx):
-        """Carga los requisitos de clase desde tabla_minable (.xlsx)."""
-        print(f"Cargando requisitos de clase desde: {archivo_xlsx}")
-        # *** YA NO NECESITA 'profesor_id', pero SÍ necesita profesores cargados ***
-        if not self.profesores_map_id:
-             raise DataLoaderError("Se deben cargar los profesores antes.")
-
-        try:
-            dtypes = {'requisito_id': str} # Ya no necesitamos dtype para profesor_id
-            df = pd.read_excel(archivo_xlsx, dtype=dtypes)
-            df.columns = df.columns.str.strip().str.lower()
-
-            # Verificar columnas de días
-            day_cols = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes']
-            for col in day_cols:
-                if col not in df.columns:
-                    col_cap = col.capitalize(); found = False
-                    if col_cap in df.columns: df.rename(columns={col_cap: col}, inplace=True); found=True
-                    else:
-                         for config_day in DIAS_SEMANA:
-                             if config_day.lower() == col and config_day in df.columns:
-                                 df.rename(columns={config_day: col}, inplace=True); found=True; break
-                    if not found: raise KeyError(f"Falta columna de día: {col}")
-
-            # Eliminar filas con requisito_id vacío
-            initial_rows = len(df)
-            df.dropna(subset=['requisito_id'], inplace=True)
-            rows_dropped = initial_rows - len(df)
-            if rows_dropped > 0: print(f"Advertencia: Se eliminaron {rows_dropped} filas de tabla_minable por requisito_id vacío.")
-
-            requisitos_cargados = []
-            requisitos_omitidos = 0
-            ids_requisitos_cargados = set()
-
-            lista_profesores = list(self.profesores_map_id.values())
-
-            print(f"Procesando {len(df)} filas de {archivo_xlsx}...")
-            for index, row in df.iterrows():
-                # Limpieza y conversión numérica
-                row = row.copy()
-                for col in df.select_dtypes(include=['object', 'string']).columns:
-                     if pd.notna(row[col]): row[col] = str(row[col]).strip()
-                numeric_cols_to_try = ['inscritos', 'horas_semanales_tipicas', 'duracion_sesion_horas', 'frecuencia_semanal', 'cantidad_docente'] + day_cols
-                for col in numeric_cols_to_try:
-                    if col in row.index: # Verificar si la columna existe
-                        if isinstance(row[col], str):
-                            try:
-                                val_float = float(row[col])
-                                row[col] = int(val_float) if val_float.is_integer() else int(val_float) # Truncar float
-                            except (ValueError, TypeError): pass
-                        elif pd.isna(row[col]): # Poner default si es NA
-                             if col in ['inscritos', 'horas_semanales_tipicas', 'frecuencia_semanal']: row[col] = 0
-                             elif col in ['duracion_sesion_horas', 'cantidad_docente']: row[col] = 1
-                             elif col in day_cols: row[col] = 0
-
-
-                req_id = row.get('requisito_id')
-                if not req_id or req_id in ids_requisitos_cargados: continue
-
-                try:
-                    # --- Determinar Profesores Elegibles por SECCION ---
-                    requisito_seccion_val = row.get('seccion') # Obtener valor
-                    if pd.isna(requisito_seccion_val):
-                        print(f"Advertencia Req {req_id}: Columna 'seccion' vacía. Asumiendo 'Todos'.")
-                        requisito_seccion = 'todos'
-                    else:
-                        requisito_seccion = str(requisito_seccion_val).strip().lower()
-
-                    profesores_elegibles = []
-                    for prof in lista_profesores:
-                         prof_seccion = getattr(prof, 'seccion_primaria', '').lower()
-                         # Lógica de Matching: Coincidencia exacta O requisito es 'todos'
-                         if requisito_seccion == 'todos' or requisito_seccion == prof_seccion:
-                              profesores_elegibles.append(prof)
-
-                    if not profesores_elegibles:
-                         # Si nadie coincide exactamente y NO es 'todos', quizás flexibilizar?
-                         # Por ahora, omitimos si no hay elegibles estrictos.
-                         print(f"Advertencia Req {req_id}: No se encontraron profesores elegibles para sección '{requisito_seccion}'. Omitiendo.")
-                         requisitos_omitidos += 1
-                         continue
-                    # -----------------------------------------------------
-
-                    # --- Extraer otros datos y validar ---
-                    required_cols_check = ['materia_id', 'nombre_materia', 'nivel', 'curso_id', 'seccion',
-                                           'inscritos', 'horas_semanales_tipicas', 'duracion_sesion_horas',
-                                           'frecuencia_semanal', 'clase_compartida', 'horario_entrada', 'horario_salida',
-                                           'cantidad_docente'] + day_cols
-                    missing_cols = [col for col in required_cols_check if col not in df.columns]
-                    if missing_cols: print(f"Advertencia Req {req_id}: Faltan columnas: {missing_cols}. Omitiendo."); requisitos_omitidos += 1; continue
-
-                    materia_id = row.get('materia_id', '')
-                    materia_nombre = row.get('nombre_materia', '')
-                    nivel = row.get('nivel', '')
-                    curso_id = row.get('curso_id', '')
-                    seccion = row.get('seccion', '') # Guardamos la sección original del requisito
-                    cantidad_docente_val = row.get('cantidad_docente', 1)
-                    inscritos_val = row.get('inscritos', 0)
-                    required_slots_val = row.get('horas_semanales_tipicas', 0)
-                    slots_per_session_val = row.get('duracion_sesion_horas', 1)
-                    frecuencia_val = row.get('frecuencia_semanal', 0)
-                    try:
-                        inscritos = int(float(inscritos_val))
-                        required_slots = int(float(required_slots_val))
-                        slots_per_session = int(float(slots_per_session_val))
-                        frecuencia = int(float(frecuencia_val))
-                        cantidad_docente = int(float(cantidad_docente_val))
-                        if slots_per_session <= 0: slots_per_session = 1
-                        if cantidad_docente <= 0: cantidad_docente = 1
-                    except (ValueError, TypeError) as e: print(f"Advertencia Req {req_id}: Error convirtiendo números: {e}. Omitiendo."); requisitos_omitidos += 1; continue
-
-                    # Validaciones de horas
-                    if required_slots > 0 and frecuencia > 0 and slots_per_session > 0 and frecuencia * slots_per_session != required_slots: print(f"Advertencia Req {req_id}: Hrs sem ({required_slots}) != Freq ({frecuencia}) * Dur ({slots_per_session}).")
-                    elif required_slots <= 0: print(f"Advertencia Req {req_id}: Hrs sem <= 0. Omitiendo."); requisitos_omitidos += 1; continue
-                    elif frecuencia <= 0 or slots_per_session <= 0: print(f"Advertencia Req {req_id}: Freq o Dur <= 0. Omitiendo."); requisitos_omitidos += 1; continue
-
-                    shared_class_group = row.get('clase_compartida', 'Individual')
-                    if pd.isna(shared_class_group) or str(shared_class_group).lower() == 'individual': shared_class_group = None
-                    else: shared_class_group = str(shared_class_group).strip()
-                    is_orquestal = str(curso_id).lower() == 'orquestal'
-                    allowed_slots = self._get_allowed_slots(row)
-                    if not allowed_slots: print(f"Advertencia Req {req_id}: No hay slots válidos. Omitiendo."); requisitos_omitidos += 1; continue
-
-                    # --- Crear objeto RequisitoClase ---
-                    requisito = RequisitoClase(
-                        id=req_id,
-                        profesores_elegibles=profesores_elegibles, # Lista de elegibles
-                        cantidad_docente=cantidad_docente,
-                        materia_id=materia_id, materia_nombre=materia_nombre, nivel=nivel,
-                        curso_id=curso_id, seccion=seccion, # Guardar sección original
-                        inscritos=inscritos, required_slots=required_slots,
-                        slots_per_session=slots_per_session, allowed_slots=allowed_slots,
-                        shared_class_group=shared_class_group, is_orquestal=is_orquestal
+            # Convertir a DataFrame si es necesario
+            if not isinstance(self.csv_data, pd.DataFrame):
+                
+                # Crear un objeto StringIO con el contenido del CSV
+                csv_io = io.StringIO(self.csv_data)
+                
+                # Leer el CSV con pandas
+                self.csv_data = pd.read_csv(csv_io, delimiter=';', encoding='cp1252')
+            
+            for _, row in self.csv_data.iterrows():
+                # Crear o recuperar objetos
+                curso_id = row['curso_id']
+                if curso_id not in self.cursos:
+                    self.cursos[curso_id] = Curso(curso_id)
+                
+                profesor_id = int(row['profesor_id'])
+                nombre_profesor = f"Profesor {profesor_id}"  # Nombre por defecto
+                if profesor_id not in self.profesores:
+                    self.profesores[profesor_id] = Profesor(profesor_id, nombre_profesor)
+                
+                sala_id = row['sala_id']
+                if sala_id not in self.salas:
+                    self.salas[sala_id] = Sala(sala_id)
+                
+                materia_id = row['materia_id']
+                if materia_id not in self.materias:
+                    # Convertir valores a tipos apropiados
+                    clase_compartida = row['clase_compartida']
+                    frecuencia_semanal = int(row['frecuencia_semanal'])
+                    duracion_sesion = int(row['duracion_sesion_horas'])
+                    horas_semanales = int(row['horas_semanales_tipicas'])
+                    
+                    self.materias[materia_id] = Materia(
+                        materia_id=materia_id,
+                        nombre=row['nombre_materia'],
+                        tipo=row['tipo_materia'],
+                        clase_compartida=clase_compartida,
+                        frecuencia_semanal=frecuencia_semanal,
+                        duracion_sesion=duracion_sesion,
+                        horas_semanales=horas_semanales
                     )
-                    requisitos_cargados.append(requisito)
-                    ids_requisitos_cargados.add(req_id)
-
-                # ... (Manejo de excepciones igual) ...
-                except KeyError as e: print(f"Advertencia: Falta columna '{e}' fila {index+2} (Req ID: {req_id}). Omitiendo."); requisitos_omitidos += 1
-                except (ValueError, TypeError) as e: print(f"Advertencia: Error tipo/formato fila {index+2} (Req ID: {req_id}): {e}. Omitiendo."); requisitos_omitidos += 1
-                except Exception as e: print(f"Advertencia: Error inesperado fila {index+2} (Req ID: {req_id}): {e}. Omitiendo."); requisitos_omitidos += 1
-
-
-            self.requisitos = requisitos_cargados
-            print(f"Carga finalizada. Requisitos válidos: {len(self.requisitos)}. Filas omitidas/con error: {requisitos_omitidos}")
-            if not self.requisitos:
-                 print("Error fatal: No se cargaron requisitos de clase válidos.")
-                 raise DataLoaderError("No se cargaron requisitos de clase válidos.")
-            self.shared_groups = {}
-            if self.requisitos:
-                for req in self.requisitos:
-                    if req.shared_class_group:
-                        self.shared_groups.setdefault(req.shared_class_group, []).append(req)
-            return self.requisitos
-
-        except FileNotFoundError: raise DataLoaderError(f"Archivo requisitos no encontrado: {archivo_xlsx}")
-        except KeyError as e: print(f"Error Clave/Columna en {archivo_xlsx}: {e}."); raise DataLoaderError(f"Columna faltante en {archivo_xlsx}: {e}")
-        except ImportError: print("Error: Necesitas 'openpyxl'."); raise DataLoaderError("Falta 'openpyxl'.")
-        except Exception as e: import traceback; print(f"Error fatal cargando requisitos:"); traceback.print_exc(); raise DataLoaderError(f"Error fatal cargando requisitos: {e}")
-
-    def get_shared_groups(self):
-         return getattr(self, 'shared_groups', {})
-
-# --- Fin de DataLoader ---
+                
+                # Crear requisito
+                requisito = Requisito(
+                    requisito_id=int(row['requisito_id']),
+                    profesor=self.profesores[profesor_id],
+                    sala=self.salas[sala_id],
+                    curso=self.cursos[curso_id],
+                    materia=self.materias[materia_id]
+                )
+                
+                # Establecer disponibilidad
+                dias_disponibles = []
+                if int(row['lunes']) == 1:
+                    dias_disponibles.append('Lunes')
+                if int(row['martes']) == 1:
+                    dias_disponibles.append('Martes')
+                if int(row['miercoles']) == 1:
+                    dias_disponibles.append('Miércoles')
+                if int(row['jueves']) == 1:
+                    dias_disponibles.append('Jueves')
+                if int(row['viernes']) == 1:
+                    dias_disponibles.append('Viernes')
+                
+                requisito.set_disponibilidad(
+                    dias_disponibles=dias_disponibles,
+                    hora_entrada=row['horario_entrada'],
+                    hora_salida=row['horario_salida']
+                )
+                
+                self.requisitos.append(requisito)
+            
+            print(f"Datos cargados: {len(self.requisitos)} requisitos, {len(self.cursos)} cursos, {len(self.profesores)} profesores, {len(self.salas)} salas, {len(self.materias)} materias")
+            return True
+        
+        except Exception as e:
+            print(f"Error al cargar datos: {e}")
+            return False
+    
+    def resolver(self, tam_poblacion=50, generaciones=100, tasa_mutacion=0.1):
+        """Resuelve el problema de timetabling y devuelve la solución."""
+        print("Iniciando algoritmo genético...")
+        
+        # Crear instancia del algoritmo genético
+        ag = AlgoritmoGenetico(
+            requisitos=self.requisitos,
+            cursos=list(self.cursos.values()),
+            periodos=self.periodos,
+            dias=self.dias,
+            tam_poblacion=tam_poblacion,
+            generaciones=generaciones,
+            tasa_mutacion=tasa_mutacion
+        )
+        
+        # Ejecutar el algoritmo
+        mejor_horario = ag.ejecutar()
+        
+        return mejor_horario
+    
+    def verificar_solucion(self, horario: 'Horario'):
+        """Verifica si la solución cumple con todas las restricciones."""
+        violaciones_duras = 0
+        violaciones_blandas = 0
+        
+        # 1. Cada materia debe estar asignada según su frecuencia semanal
+        for requisito in self.requisitos:
+            asignaciones = 0
+            # Contar asignaciones en el horario
+            for (dia, periodo), asignaciones_curso in horario.asignaciones.items():
+                for curso_id, req in asignaciones_curso.items():
+                    if req.requisito_id == requisito.requisito_id:
+                        asignaciones += 1
+            
+            if asignaciones != requisito.materia.frecuencia_semanal:
+                violaciones_duras += 1
+                print(f"Violación dura: {requisito} debería tener {requisito.materia.frecuencia_semanal} sesiones, pero tiene {asignaciones}")
+        
+        # 2. Un profesor no puede dar clases a la misma hora
+        for dia in self.dias:
+            for periodo in self.periodos:
+                profesores_en_periodo = set()
+                for curso_id, req in horario.asignaciones.get((dia, periodo), {}).items():
+                    if req.profesor in profesores_en_periodo:
+                        violaciones_duras += 1
+                        print(f"Violación dura: El profesor {req.profesor} está asignado a múltiples clases en {dia}, periodo {periodo}")
+                    profesores_en_periodo.add(req.profesor)
+        
+        # 3. Una sala no puede tener más de una clase a la misma hora
+        for dia in self.dias:
+            for periodo in self.periodos:
+                salas_en_periodo = set()
+                for curso_id, req in horario.asignaciones.get((dia, periodo), {}).items():
+                    if req.sala in salas_en_periodo:
+                        violaciones_duras += 1
+                        print(f"Violación dura: La sala {req.sala} está asignada a múltiples clases en {dia}, periodo {periodo}")
+                    salas_en_periodo.add(req.sala)
+        
+        # 4. Un curso no puede tener más de una clase a la misma hora
+        for dia in self.dias:
+            for periodo in self.periodos:
+                if (dia, periodo) in horario.asignaciones:
+                    cursos_en_periodo = horario.asignaciones[(dia, periodo)].keys()
+                    if len(cursos_en_periodo) > len(set(cursos_en_periodo)):
+                        violaciones_duras += 1
+                        print(f"Violación dura: Hay cursos duplicados en {dia}, periodo {periodo}")
+        
+        # 5. Verificar clases compartidas
+        clases_compartidas = {}
+        for requisito in self.requisitos:
+            if requisito.materia.es_compartida():
+                clase = requisito.materia.clase_compartida
+                if clase not in clases_compartidas:
+                    clases_compartidas[clase] = []
+                clases_compartidas[clase].append(requisito)
+        
+        for clase, requisitos_clase in clases_compartidas.items():
+            # Verificar que todas las instancias están asignadas correctamente
+            for i, req1 in enumerate(requisitos_clase):
+                for j, req2 in enumerate(requisitos_clase):
+                    if i < j:  # Evitar comparaciones duplicadas
+                        # Las asignaciones deberían ser idénticas
+                        if sorted(req1.asignaciones) != sorted(req2.asignaciones):
+                            violaciones_duras += 1
+                            print(f"Violación dura: Clase compartida '{clase}' no está correctamente asignada para todos los cursos")
+                            break
+        
+        # 6. Verificar huecos en los horarios
+        for curso_id in self.cursos:
+            if horario.tiene_huecos(curso_id):
+                violaciones_duras += 1
+                print(f"Violación dura: El curso {curso_id} tiene huecos en su horario")
+        
+        # 7. Restricciones blandas: distribución uniforme de clases
+        for requisito in self.requisitos:
+            if len(requisito.asignaciones) >= 2:
+                # Verificar la distribución en días diferentes
+                dias_asignados = [dia for dia, _ in requisito.asignaciones]
+                if len(set(dias_asignados)) < len(dias_asignados):
+                    violaciones_blandas += 1
+                    print(f"Violación blanda: {requisito} tiene sesiones concentradas en los mismos días")
+        
+        return {
+            'violaciones_duras': violaciones_duras,
+            'violaciones_blandas': violaciones_blandas,
+            'solucion_valida': violaciones_duras == 0
+        }
+    
+    def imprimir_informe(self, horario: 'Horario'):
+        """Imprime un informe detallado de la solución."""
+        print("\n===== INFORME DE SOLUCIÓN =====")
+        
+        # Imprimir estadísticas
+        total_asignaciones = sum(len(asignaciones) for _, asignaciones in horario.asignaciones.items())
+        print(f"Total de asignaciones realizadas: {total_asignaciones}")
+        
+        # Verificar completitud
+        requisitos_completados = 0
+        total_sesiones_requeridas = sum(req.materia.frecuencia_semanal for req in self.requisitos)
+        total_sesiones_asignadas = 0
+        
+        for requisito in self.requisitos:
+            asignaciones = 0
+            for (dia, periodo), asignaciones_curso in horario.asignaciones.items():
+                for curso_id, req in asignaciones_curso.items():
+                    if req.requisito_id == requisito.requisito_id:
+                        asignaciones += 1
+            
+            total_sesiones_asignadas += asignaciones
+            if asignaciones == requisito.materia.frecuencia_semanal:
+                requisitos_completados += 1
+        
+        print(f"Requisitos completamente asignados: {requisitos_completados}/{len(self.requisitos)} ({requisitos_completados/len(self.requisitos)*100:.2f}%)")
+        print(f"Sesiones asignadas: {total_sesiones_asignadas}/{total_sesiones_requeridas} ({total_sesiones_asignadas/total_sesiones_requeridas*100:.2f}%)")
+        
+        # Verificar restricciones
+        resultado_verificacion = self.verificar_solucion(horario)
+        print(f"Violaciones de restricciones duras: {resultado_verificacion['violaciones_duras']}")
+        print(f"Violaciones de restricciones blandas: {resultado_verificacion['violaciones_blandas']}")
+        print(f"Solución válida: {'Sí' if resultado_verificacion['solucion_valida'] else 'No'}")
+        
+        # Retornar validez de la solución
+        return resultado_verificacion['solucion_valida']
+    
+    def generar_visualizacion_html(self, horario: 'Horario') -> str:
+        """Genera una visualización HTML de la solución similar al formato de la imagen de referencia."""
+        # Obtener la matriz del horario
+        matriz = horario.generar_matriz_horario()
+        
+        # Generar HTML
+        html = """
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Horarios - Academia Nacional de Música 'Man Césped'</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 20px;
+                }
+                table {
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin-bottom: 30px;
+                }
+                th, td {
+                    border: 1px solid #000;
+                    padding: 8px;
+                    text-align: center;
+                    vertical-align: top;
+                }
+                th {
+                    background-color: #f2f2f2;
+                }
+                .period-cell {
+                    text-align: center;
+                    font-weight: bold;
+                    background-color: #e1e1e1;
+                }
+                .regular-class {
+                    background-color: #ffe6cc;
+                }
+                .orchestral-class {
+                    background-color: #d9edf7;
+                }
+                .class-name {
+                    font-weight: bold;
+                    margin-bottom: 3px;
+                }
+                .teacher-name {
+                    color: #555;
+                    font-style: italic;
+                }
+                .room-name {
+                    color: #777;
+                }
+                h1, h2 {
+                    color: #333;
+                }
+            </style>
+        </head>
+        <body>
+            <h1>Academia Nacional de Música 'Man Césped'</h1>
+            <h2>Horarios Generados con Algoritmos Genéticos</h2>
+        """
+        
+        # Tabla por día y periodo (como en la imagen de referencia)
+        html += """
+            <table>
+                <tr>
+                    <th>HR</th>
+        """
+        
+        # Encabezados de cursos
+        cursos_ordenados = sorted(self.cursos.keys())
+        for curso_id in cursos_ordenados:
+            html += f"<th>{curso_id}</th>\n"
+        
+        html += "</tr>\n"
+        
+        # Filas por periodo
+        for periodo_id, periodo in self.periodos.items():
+            html += "<tr>\n"
+            
+            # Celda de hora y periodo
+            html += f"""
+                <td class="period-cell">
+                    {periodo.hora_inicio}<br>
+                    {periodo_id}
+                </td>
+            """
+            
+            # Celdas para cada curso
+            for curso_id in cursos_ordenados:
+                # Buscar asignación para este curso en cualquier día (simplificación)
+                asignacion_encontrada = False
+                for dia in self.dias:
+                    if (dia, periodo_id) in horario.asignaciones and curso_id in horario.asignaciones[(dia, periodo_id)]:
+                        requisito = horario.asignaciones[(dia, periodo_id)][curso_id]
+                        
+                        # Determinar clase de estilo
+                        clase_estilo = "orchestral-class" if requisito.materia.tipo == "Orquestal" else "regular-class"
+                        
+                        html += f"""
+                            <td class="{clase_estilo}">
+                                <div class="class-name">{requisito.materia.nombre}</div>
+                                <div class="teacher-name">{requisito.profesor.nombre}</div>
+                                <div class="room-name">{requisito.sala.sala_id}</div>
+                            </td>
+                        """
+                        asignacion_encontrada = True
+                        break
+                
+                if not asignacion_encontrada:
+                    html += "<td></td>\n"
+            
+            html += "</tr>\n"
+        
+        html += """
+            </table>
+        </body>
+        </html>
+        """
+        
+        return html
