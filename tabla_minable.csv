@@ -1,0 +1,151 @@
+requisito_id;profesor_id;sala_id;curso_id;materia_id;nombre_materia;tipo_materia;clase_compartida;frecuencia_semanal;duracion_sesion_horas;horas_semanales_tipicas;lunes;martes;miercoles;jueves;viernes;horario_entrada;horario_salida
+25001;1004;F-102;1°Inf (A);CI-IC-001;Canto Infantil;Regular;Individual;2;1;2;0;1;1;1;0;15:00:00;18:00:00
+25006;1004;F-104;1°Inf (B);CI-IC-001;Canto Infantil;Regular;Individual;2;1;2;0;1;1;1;0;15:00:00;18:00:00
+25002;1025;F-101;1°Inf (A);TC-IC-001;Teclado;Regular;Individual;2;1;2;0;1;1;1;0;15:00:00;18:00:00
+25007;1023;F-101;1°Inf (B);TC-IC-001;Teclado;Regular;Individual;2;1;2;0;1;1;1;0;15:00:00;18:00:00
+25003;1026;F-104;1°Inf (A);CA-IC-001;Creatividad Artistica;Regular;Individual;2;1;2;0;1;1;1;0;15:00:00;18:00:00
+25008;1023;F-102;1°Inf (B);CA-IC-001;Creatividad Artistica;Regular;Individual;2;1;2;0;1;1;1;0;15:00:00;18:00:00
+25004;1006;F-102;1°Inf (A);RT-IC-001;Ritmica Infantil;Regular;Individual;2;1;2;0;1;1;1;0;15:00:00;18:00:00
+25009;1006;F-102;1°Inf (B);RT-IC-001;Ritmica Infantil;Regular;Individual;2;1;2;0;1;1;1;0;15:00:00;18:00:00
+25005;1023;F-103;1°Inf (A);AM-IC-001;Apreciacion Musical;Regular;Individual;1;1;1;0;1;1;1;0;15:00:00;18:00:00
+25010;1025;F-103;1°Inf (B);AM-IC-001;Apreciacion Musical;Regular;Individual;1;1;1;0;1;1;1;0;15:00:00;18:00:00
+25011;1006;F-102;2°Inf (A);RT-IC-002;Ritmica Infantil;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;18:00:00
+25016;1006;F-102;2°Inf (B);RT-IC-002;Ritmica Infantil;Regular;Individual;2;1;2;1;1;0;1;0;15:00:00;18:00:00
+25012;1026;F-101;2°Inf (A);TC-IC-002;Teclado;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;18:00:00
+25017;1018;F-101;2°Inf (B);TC-IC-002;Teclado;Regular;Individual;2;1;2;1;1;0;1;0;15:00:00;18:00:00
+25013;1018;F-104;2°Inf (A);CA-IC-002;Creatividad Artistica;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;18:00:00
+25018;1014;F-104;2°Inf (B);CA-IC-002;Creatividad Artistica;Regular;Individual;2;1;2;1;1;0;1;0;15:00:00;18:00:00
+25014;1011;F-103;2°Inf (A);AM-IC-002;Apreciacion Musical;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;18:00:00
+25019;1011;F-103;2°Inf (B);AM-IC-002;Apreciacion Musical;Regular;Individual;1;1;1;1;1;0;1;0;15:00:00;18:00:00
+25015;1004;F-102;2°Inf (A);CI-IC-002;Canto Infantil;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;18:00:00
+25020;1004;F-102;2°Inf (B);CI-IC-002;Canto Infantil;Regular;Individual;2;1;2;1;1;0;1;0;15:00:00;18:00:00
+25021;1006;F-102;3°Inf (A);RT-IC-003;Ritmica Infantil;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;18:00:00
+25027;1006;F-102;3°Inf (B);RT-IC-003;Ritmica Infantil;Regular;Individual;2;1;2;0;1;0;1;1;15:00:00;18:00:00
+25022;1018;F-101;3°Inf (A);TC-IC-003;Teclado ;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;18:00:00
+25028;1018;F-101;3°Inf (B);TC-IC-003;Teclado ;Regular;Individual;1;1;1;0;1;0;1;1;15:00:00;18:00:00
+25023;1019;F-104;3°Inf (A);DI-IC-001;Desarrollo Intelectual;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;18:00:00
+25029;1026;F-104;3°Inf (B);DI-IC-001;Desarrollo Intelectual;Regular;Individual;1;1;1;0;1;0;1;1;15:00:00;18:00:00
+25024;1011;F-103;3°Inf (A);AM-IC-003;Apreciacion Musical;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;18:00:00
+25030;1018;F-103;3°Inf (B);AM-IC-003;Apreciacion Musical;Regular;Individual;1;1;1;0;1;0;1;1;15:00:00;18:00:00
+25025;1004;F-102;3°Inf (A);CI-IC-003;Canto Infantil;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;18:00:00
+25031;1004;F-102;3°Inf (B);CI-IC-003;Canto Infantil;Regular;Individual;2;1;2;0;1;0;1;1;15:00:00;18:00:00
+25026;1014;F-104;3°Inf (A);FD-IC-001;Flauta Dulce;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;18:00:00
+25032;1014;F-104;3°Inf (B);FD-IC-001;Flauta Dulce;Regular;Individual;2;1;2;0;1;0;1;1;15:00:00;18:00:00
+25033;1002;B-101;1°Ini (A);SR-INC-001;Solfeo-Ritmica;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25041;1002;B-102;1°Ini (B);SR-INC-001;Solfeo-Ritmica;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25034;1016;B-101;1°Ini (A);LEM-INC-001;Lecto-Escritura;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;19:00:00
+25042;1016;B-102;1°Ini (B);LEM-INC-001;Lecto-Escritura;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;19:00:00
+25035;1014;B-101;1°Ini (A);FD-INC-001;Flauta Dulce;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;19:00:00
+25043;1014;B-102;1°Ini (B);FD-INC-001;Flauta Dulce;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;19:00:00
+25036;1001;D-218;1°Ini (A);TC-INC-001;Teclado;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25044;1001;D-218;1°Ini (B);TC-INC-001;Teclado;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25037;1007;D-217;1°Ini (A);AM-INC-001;Apreciacion Musical;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;19:00:00
+25045;1007;D-217;1°Ini (B);AM-INC-001;Apreciacion Musical;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;19:00:00
+25038;1022;B-101;1°Ini (A);DI-INC-001;Desarrollo Intelectual;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;19:00:00
+25046;1022;B-102;1°Ini (B);DI-INC-001;Desarrollo Intelectual;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;19:00:00
+25039;1009;C-101;1°Ini (A);PC-INC-001;Practica Coral;Regular;Practica Coral;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25047;1009;C-101;1°Ini (B);PC-INC-001;Practica Coral;Regular;Practica Coral;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25040;1000;D;1°Ini (A);INI-INC-001;Iniciacion Instrumental;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25048;1000;D;1°Ini (B);INI-INC-001;Iniciacion Instrumental;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25049;1002;B-103;2°Ini (A);SR-INC-002;Solfeo-Ritmica;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25056;1002;B-104;2°Ini (B);SR-INC-002;Solfeo-Ritmica;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25050;1011;B-103;2°Ini (A);LEM-INC-002;Lecto-Escritura;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25057;1016;B-104;2°Ini (B);LEM-INC-002;Lecto-Escritura;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25051;1014;B-103;2°Ini (A);FD-INC-002;Flauta Dulce;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25058;1014;B-104;2°Ini (B);FD-INC-002;Flauta Dulce;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25052;1001;D-218;2°Ini (A);TC-INC-002;Teclado;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25059;1025;D-218;2°Ini (B);TC-INC-002;Teclado;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25053;1007;D-217;2°Ini (A);AM-INC-002;Apreciacion Musical;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;19:00:00
+25060;1007;D-217;2°Ini (B);AM-INC-002;Apreciacion Musical;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;19:00:00
+25054;1010;B-103;2°Ini (A);DI-INC-002;Desarrollo Intelectual;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;19:00:00
+25061;1018;B-104;2°Ini (B);DI-INC-002;Desarrollo Intelectual;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;19:00:00
+25055;1009;C-101;2°Ini (A);PC-INC-002;Practica Coral;Regular;Practica Coral;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25062;1009;C-101;2°Ini (B);PC-INC-002;Practica Coral;Regular;Practica Coral;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25063;1012;B-105;3°Ini;SR-INC-003;Solfeo-Ritmica;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25064;1008;B-105;3°Ini;TM-INC-003;Teoria de la Musica;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25065;1025;B-105;3°Ini;FD-INC-003;Flauta Dulce;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25066;1025;D-218;3°Ini;TC-INC-003;Teclado;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25067;1007;D-217;3°Ini;AM-INC-003;Apreciacion Musical;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;19:00:00
+25068;1022;B-105;3°Ini;DI-INC-003;Desarrollo Intelectual;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;19:00:00
+25069;1009;B-105;3°Ini;PC-INC-003;Practica Coral;Regular;Practica Coral;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25071;1017;B-201;1°Bas;SR-BC-001;Solfeo-Ritmica;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25072;1016;B-201;1°Bas;TM-BC-001;Teoria de la Musica;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25073;1019;B-201;1°Bas;DM-BC-001;Dictado Musical;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25074;1019;D-217;1°Bas;AM-BC-001;Apreciacion Musical;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;19:00:00
+25075;1008;C-101;1°Bas;CN-BC-001;Practica Coral (CN);Regular;Practica Coral (CN);3;1;3;1;0;1;0;1;15:00:00;19:00:00
+25077;1010;E-101;1°Bas;OF-BC-001;Orquesta Folklorica (A);Regular;Orquesta Folklorica (A);2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25078;1009;B-202;2°Bas;SR-BC-002;Solfeo-Ritmica;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25079;1008;B-202;2°Bas;TM-BC-002;Teoria de la Musica;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25080;1027;B-202;2°Bas;DM-BC-002;Dictado Musical;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25081;1007;D-217;2°Bas;AM-BC-002;Apreciacion Musical;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;19:00:00
+25082;1008;C-101;2°Bas;CN-BC-002;Practica Coral (CN);Regular;Practica Coral (CN);3;1;3;1;0;1;0;1;15:00:00;19:00:00
+25084;1010;E-101;2°Bas;OF-BC-002;Orquesta Folklorica (A);Regular;Orquesta Folklorica (A);2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25085;1026;B-203;3°Bas;SR-BC-003;Solfeo-Ritmica;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25086;1024;B-203;3°Bas;TM-BC-003;Teoria de la Musica;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25087;1027;B-203;3°Bas;DM-BC-003;Dictado Musical;Regular;Individual;2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25088;1015;A-305;3°Bas;ITV-BC-001;Iniciación a la Tecnica Vocal;Regular;Individual;1;1;1;1;0;1;0;1;15:00:00;19:00:00
+25089;1008;C-101;3°Bas;CN-BC-003;Practica Coral (CN);Regular;Practica Coral (CN);3;1;3;1;0;1;0;1;15:00:00;19:00:00
+25091;1010;E-101;3°Bas;OF-BC-003;Orquesta Folklorica (A);Regular;Orquesta Folklorica (A);2;1;2;1;0;1;0;1;15:00:00;19:00:00
+25092;1002;B-204;1°Inv (A);SR-ITC-001;Solfeo-Ritmica;Regular;Individual;2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25101;1019;B-205;1°Inv (B);SR-ITC-001;Solfeo-Ritmica;Regular;Individual;2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25093;1016;B-204;1°Inv (A);TM-ITC-001;Teoria de la Musica;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25102;1011;B-205;1°Inv (B);TM-ITC-001;Teoria de la Musica;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25094;1005;B-204;1°Inv (A);DIM-ITC-001;Dictado Musical;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25103;1010;B-205;1°Inv (B);DIM-ITC-001;Dictado Musical;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25095;1010;D-217;1°Inv (A);AMT-ITC-001;Apreciacion Musical;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25104;1011;D-217;1°Inv (B);AMT-ITC-001;Apreciacion Musical;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25096;1010;B-204;1°Inv (A);FD-ITC-001;Flauta Dulce;Regular;Individual;2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25105;1010;B-205;1°Inv (B);FD-ITC-001;Flauta Dulce;Regular;Individual;2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25097;1001;D-218;1°Inv (A);TC-ITC-001;Teclado;Regular;Individual;2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25106;1001;D-218;1°Inv (B);TC-ITC-001;Teclado;Regular;Individual;2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25098;1015;E-101;1°Inv (A);PC-ITC-001;Practica Coral (J);Regular;Practica Coral (J);2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25107;1015;E-101;1°Inv (B);PC-ITC-001;Practica Coral (J);Regular;Practica Coral (J);2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25100;1000;D;1°Inv (A);INI-ITC-001;Iniciacion Instrumental;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25109;1000;D;1°Inv (B);INI-ITC-001;Iniciacion Instrumental;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25110;1020;A-203;2°Inv;SR-ITC-002;Solfeo-Ritmica;Regular;Individual;2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25111;1011;A-203;2°Inv;TM-ITC-002;Teoria de la Musica;Regular;Individual;2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25112;1024;A-203;2°Inv;DM-ITC-002;Dictado Musical;Regular;Individual;2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25113;1003;A-203;2°Inv;FD-ITC-002;Flauta Dulce;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25114;1025;D-218;2°Inv;TC-ITC-002;Teclado;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25115;1001;C-101;2°Inv;CJ-ITC-001;Practica Coral (CJ);Regular;Practica Coral (CJ);2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25117;1001;E-101;2°Inv;OF-ITC-001;Orquesta Folklorica (A);Regular;Orquesta Folklorica (A);2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25118;1028;A-302;3°Inv;SR-ITC-003;Solfeo-Ritmica;Regular;Individual;2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25119;1011;A-302;3°Inv;TM-ITC-003;Teoria de la Musica;Regular;Individual;2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25120;1028;A-302;3°Inv;DM-ITC-003;Dictado Musical;Regular;Individual;2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25121;1014;A-302;3°Inv;FD-ITC-003;Flauta Dulce;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25122;1025;D-218;3°Inv;TC-ITC-003;Teclado;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25123;1001;C-101;3°Inv;CJ-ITC-002;Practica Coral (CJ);Regular;Practica Coral (CJ);2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25125;1001;E-101;3°Inv;OF-ITC-002;Orquesta Folklorica (A);Regular;Orquesta Folklorica (A);2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25126;1022;A-303;1°Int;SR-IMC-001;Solfeo-Ritmica;Regular;Individual;2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25127;1015;A-303;1°Int;DM-IMC-001;Dictado Musical;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25128;1013;A-303;1°Int;ARM-IMC-001;Armonia;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25129;1015;A-303;1°Int;TV-IMC-001;Tecnica Vocal;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25130;1013;A-303;1°Int;HA-IMC-001;Historia del Arte;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25131;1001;C-101;1°Int;CJ-IMC-001;Practica Coral (CJ);Regular;Practica Coral (CJ);3;1;3;1;0;1;0;1;17:00:00;21:00:00
+25133;1001;E-101;1°Int;OF-IMC-001;Orquesta Folklorica (B);Regular;Orquesta Folklorica (B);3;1;3;1;0;1;0;1;17:00:00;21:00:00
+25134;1008;A-304;2°Int;SR-IMC-002;Solfeo-Ritmica;Regular;Individual;2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25135;1018;A-304;2°Int;DM-IMC-002;Dictado Musical;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25136;1007;A-304;2°Int;ARM-IMC-002;Armonia;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25137;1027;A-304;2°Int;ANM-IMC-001;Analisis Musical;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25138;1007;A-304;2°Int;HA-IMC-002;Historia del Arte;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25139;1001;C-101;2°Int;CJ-IMC-002;Practica Coral (CJ);Regular;Practica Coral (CJ);3;1;3;1;0;1;0;1;17:00:00;21:00:00
+25141;1001;E-101;2°Int;OF-IMC-002;Orquesta Folklorica (B);Regular;Orquesta Folklorica (B);3;1;3;1;0;1;0;1;17:00:00;21:00:00
+25142;1008;A-305;3°Int;SR-IMC-003;Solfeo-Ritmica;Regular;Individual;2;1;2;1;0;1;0;1;17:00:00;21:00:00
+25143;1023;A-305;3°Int;DM-IMC-003;Dictado Musical;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25144;1024;A-305;3°Int;AR-IMC-003;Armonia;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25145;1027;A-305;3°Int;ANM-IMC-002;Analisis Musical;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25146;1007;A-305;3°Int;HM-IMC-001;Historia de la Musica;Regular;Individual;1;1;1;1;0;1;0;1;17:00:00;21:00:00
+25147;1001;C-101;3°Int;CJ-IMC-003;Practica Coral (CJ);Regular;Practica Coral (CJ);3;1;3;1;0;1;0;1;17:00:00;21:00:00
+25149;1001;E-101;3°Int;OF-IMC-003;Orquesta Folklorica (B);Regular;Orquesta Folklorica (B);3;1;3;1;0;1;0;1;17:00:00;21:00:00
+35001;1016;C-101;Orquestal;INC-OC;Inc. Orq Cuerdas;Orquestal;Individual;2;2;4;0;1;0;1;0;15:00:00;21:00:00
+35002;1007;B-101;Orquestal;INC-OG;Inc. Orq Guitarra;Orquestal;Individual;2;2;4;0;1;0;1;0;15:00:00;21:00:00
+35003;1002;B-104;Orquestal;INC-FL;Inc. Orq Flautas;Orquestal;Individual;2;2;4;0;1;0;1;0;15:00:00;21:00:00
+35004;1001;C-101;Orquestal;OCA;Orquesta de Cuerdas (A);Orquestal;Individual;2;2;4;0;1;0;1;0;15:00:00;21:00:00
+35005;1009;B-102;Orquestal;OGA;Orquesta de Guitarras (A);Orquestal;Individual;2;2;4;0;1;0;1;0;15:00:00;21:00:00
+35006;1005;E-101;Orquestal;OVA;Orquesta de Vientos (A);Orquestal;Individual;2;2;4;0;1;0;1;0;15:00:00;21:00:00
+35007;1021;E-101;Orquestal;OPA;Orquesta de Percusión (A);Orquestal;Individual;1;2;2;0;1;0;1;0;15:00:00;21:00:00
+35008;1017;A-203;Orquestal;OCB;Orquesta de Cuerdas (B);Orquestal;Individual;2;2;4;0;1;0;1;0;15:00:00;21:00:00
+35009;1002;B-103;Orquestal;OGB;Orquesta de Guitarras (B);Orquestal;Individual;2;2;4;0;1;0;1;0;15:00:00;21:00:00
+35010;1013;E-101;Orquestal;OVB;Orquesta de Vientos (B);Orquestal;Individual;2;2;4;0;1;0;1;0;15:00:00;21:00:00
+35011;1021;E-101;Orquestal;OPB;Orquestas de Precusion (B);Orquestal;Individual;1;2;2;0;1;0;1;0;15:00:00;21:00:00
+35012;1017;E-101;Orquestal;OS;Orquesta Sinfonica;Orquestal;Individual;1;2;2;0;1;0;1;0;15:00:00;21:00:00
