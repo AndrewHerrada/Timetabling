@@ -1,0 +1,1028 @@
+{
+  "Lunes": {
+    "0": [
+      {
+        "course": "Introducción a Bases de Datos",
+        "professor": "Dr. López",
+        "room": "B203",
+        "groups": "1º B, 1º C",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 4
+      },
+      {
+        "course": "Blockchain",
+        "professor": "Dra. Torres",
+        "room": "A102",
+        "groups": "4º A, 4º B",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 3
+      }
+    ],
+    "1": [
+      {
+        "continuation": true,
+        "course": "Introducción a Bases de Datos",
+        "professor": "Dr. López",
+        "room": "B203",
+        "groups": "1º B, 1º C"
+      },
+      {
+        "continuation": true,
+        "course": "Blockchain",
+        "professor": "Dra. Torres",
+        "room": "A102",
+        "groups": "4º A, 4º B"
+      }
+    ],
+    "2": [
+      {
+        "course": "Matemáticas II",
+        "professor": "Dr. García",
+        "room": "A101",
+        "groups": "2º A, 2º B",
+        "duration": 2,
+        "requiresComputers": false,
+        "score": 4
+      },
+      {
+        "course": "Ética y Legislación",
+        "professor": "Dr. González",
+        "room": "A102",
+        "groups": "4º C",
+        "duration": 1,
+        "requiresComputers": false,
+        "score": 5
+      },
+      {
+        "course": "Realidad Virtual",
+        "professor": "Dr. Castro",
+        "room": "A102",
+        "groups": "3º D, 4º B",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 3
+      }
+    ],
+    "3": [
+      {
+        "continuation": true,
+        "course": "Matemáticas II",
+        "professor": "Dr. García",
+        "room": "A101",
+        "groups": "2º A, 2º B"
+      },
+      {
+        "course": "Inglés Técnico III",
+        "professor": "Dra. Martínez",
+        "room": "A101",
+        "groups": "3º A, 3º B, 3º C",
+        "duration": 1,
+        "requiresComputers": false,
+        "score": 4
+      },
+      {
+        "course": "Emprendimiento",
+        "professor": "Dr. González",
+        "room": "LAB101",
+        "groups": "4º A, 4º B",
+        "duration": 2,
+        "requiresComputers": false,
+        "score": 4
+      },
+      {
+        "continuation": true,
+        "course": "Realidad Virtual",
+        "professor": "Dr. Castro",
+        "room": "A102",
+        "groups": "3º D, 4º B"
+      }
+    ],
+    "4": [
+      {
+        "course": "Matemáticas I",
+        "professor": "Dr. García",
+        "room": "LAB102",
+        "groups": "1º A, 1º B",
+        "duration": 2,
+        "requiresComputers": false,
+        "score": 4
+      },
+      {
+        "course": "Ética Profesional",
+        "professor": "Dr. González",
+        "room": "B205",
+        "groups": "1º D",
+        "duration": 1,
+        "requiresComputers": false,
+        "score": 5
+      },
+      {
+        "course": "Inglés Técnico II",
+        "professor": "Dra. Martínez",
+        "room": "LAB101",
+        "groups": "2º A, 2º B, 2º C",
+        "duration": 1,
+        "requiresComputers": false,
+        "score": 4
+      },
+      {
+        "course": "Bases de Datos Avanzadas",
+        "professor": "Dr. Ramírez",
+        "room": "A101",
+        "groups": "3º B",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 4
+      },
+      {
+        "continuation": true,
+        "course": "Emprendimiento",
+        "professor": "Dr. González",
+        "room": "LAB101",
+        "groups": "4º A, 4º B"
+      },
+      {
+        "course": "Minería de Datos",
+        "professor": "Dr. Ramírez",
+        "room": "LAB101",
+        "groups": "4º B",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 5
+      },
+      {
+        "course": "Comercio Electrónico",
+        "professor": "Dr. González",
+        "room": "A102",
+        "groups": "3º A, 4º A",
+        "duration": 2,
+        "requiresComputers": false,
+        "score": 4
+      }
+    ],
+    "5": [
+      {
+        "continuation": true,
+        "course": "Matemáticas I",
+        "professor": "Dr. García",
+        "room": "LAB102",
+        "groups": "1º A, 1º B"
+      },
+      {
+        "continuation": true,
+        "course": "Bases de Datos Avanzadas",
+        "professor": "Dr. Ramírez",
+        "room": "A101",
+        "groups": "3º B"
+      },
+      {
+        "continuation": true,
+        "course": "Minería de Datos",
+        "professor": "Dr. Ramírez",
+        "room": "LAB101",
+        "groups": "4º B"
+      },
+      {
+        "continuation": true,
+        "course": "Comercio Electrónico",
+        "professor": "Dr. González",
+        "room": "A102",
+        "groups": "3º A, 4º A"
+      }
+    ],
+    "6": [],
+    "7": [
+      {
+        "course": "Estadística",
+        "professor": "Dr. Díaz",
+        "room": "A101",
+        "groups": "2º B, 2º D",
+        "duration": 2,
+        "requiresComputers": false,
+        "score": 4
+      }
+    ],
+    "8": [
+      {
+        "continuation": true,
+        "course": "Estadística",
+        "professor": "Dr. Díaz",
+        "room": "A101",
+        "groups": "2º B, 2º D"
+      }
+    ]
+  },
+  "Martes": {
+    "0": [
+      {
+        "course": "Análisis de Algoritmos",
+        "professor": "Dr. Morales",
+        "room": "A101",
+        "groups": "2º B, 2º C",
+        "duration": 2,
+        "requiresComputers": false,
+        "score": 4
+      },
+      {
+        "course": "Seguridad Informática",
+        "professor": "Dra. Torres",
+        "room": "B201",
+        "groups": "3º D",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 4
+      },
+      {
+        "course": "Cloud Computing",
+        "professor": "Dra. Ruiz",
+        "room": "B201",
+        "groups": "4º B, 4º C",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 5
+      }
+    ],
+    "1": [
+      {
+        "continuation": true,
+        "course": "Análisis de Algoritmos",
+        "professor": "Dr. Morales",
+        "room": "A101",
+        "groups": "2º B, 2º C"
+      },
+      {
+        "continuation": true,
+        "course": "Seguridad Informática",
+        "professor": "Dra. Torres",
+        "room": "B201",
+        "groups": "3º D"
+      },
+      {
+        "continuation": true,
+        "course": "Cloud Computing",
+        "professor": "Dra. Ruiz",
+        "room": "B201",
+        "groups": "4º B, 4º C"
+      }
+    ],
+    "2": [
+      {
+        "course": "Sistemas Operativos",
+        "professor": "Dra. Ruiz",
+        "room": "C302",
+        "groups": "2º A, 2º D",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 3
+      },
+      {
+        "course": "Bioinformática",
+        "professor": "Dr. Díaz",
+        "room": "LAB102",
+        "groups": "3º B, 4º C",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 4
+      }
+    ],
+    "3": [
+      {
+        "continuation": true,
+        "course": "Sistemas Operativos",
+        "professor": "Dra. Ruiz",
+        "room": "C302",
+        "groups": "2º A, 2º D"
+      },
+      {
+        "continuation": true,
+        "course": "Bioinformática",
+        "professor": "Dr. Díaz",
+        "room": "LAB102",
+        "groups": "3º B, 4º C"
+      }
+    ],
+    "4": [
+      {
+        "course": "Arquitectura de Computadoras",
+        "professor": "Dra. Torres",
+        "room": "LAB103",
+        "groups": "2º C",
+        "duration": 2,
+        "requiresComputers": false,
+        "score": 5
+      }
+    ],
+    "5": [
+      {
+        "course": "Álgebra Lineal",
+        "professor": "Dr. García",
+        "room": "A104",
+        "groups": "1º C, 1º D",
+        "duration": 2,
+        "requiresComputers": false,
+        "score": 5
+      },
+      {
+        "course": "Metodología de la Investigación",
+        "professor": "Dra. Sánchez",
+        "room": "C305",
+        "groups": "1º C",
+        "duration": 1,
+        "requiresComputers": false,
+        "score": 5
+      },
+      {
+        "continuation": true,
+        "course": "Arquitectura de Computadoras",
+        "professor": "Dra. Torres",
+        "room": "LAB103",
+        "groups": "2º C"
+      },
+      {
+        "course": "Sistemas Distribuidos",
+        "professor": "Dra. Ruiz",
+        "room": "A107",
+        "groups": "3º C, 3º D",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 3
+      },
+      {
+        "course": "Análisis Numérico",
+        "professor": "Dr. García",
+        "room": "A101",
+        "groups": "3º A, 3º D",
+        "duration": 2,
+        "requiresComputers": false,
+        "score": 4
+      }
+    ],
+    "6": [
+      {
+        "continuation": true,
+        "course": "Álgebra Lineal",
+        "professor": "Dr. García",
+        "room": "A104",
+        "groups": "1º C, 1º D"
+      },
+      {
+        "course": "Introducción a Redes",
+        "professor": "Dra. Martínez",
+        "room": "B203",
+        "groups": "1º D",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 3
+      },
+      {
+        "course": "Diseño de Bases de Datos",
+        "professor": "Dr. Ramírez",
+        "room": "C305",
+        "groups": "2º B, 2º C",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 4
+      },
+      {
+        "course": "Matemáticas Discretas",
+        "professor": "Dr. Díaz",
+        "room": "A107",
+        "groups": "2º A",
+        "duration": 1,
+        "requiresComputers": false,
+        "score": 5
+      },
+      {
+        "continuation": true,
+        "course": "Sistemas Distribuidos",
+        "professor": "Dra. Ruiz",
+        "room": "A107",
+        "groups": "3º C, 3º D"
+      },
+      {
+        "continuation": true,
+        "course": "Análisis Numérico",
+        "professor": "Dr. García",
+        "room": "A101",
+        "groups": "3º A, 3º D"
+      }
+    ],
+    "7": [
+      {
+        "continuation": true,
+        "course": "Introducción a Redes",
+        "professor": "Dra. Martínez",
+        "room": "B203",
+        "groups": "1º D"
+      },
+      {
+        "continuation": true,
+        "course": "Diseño de Bases de Datos",
+        "professor": "Dr. Ramírez",
+        "room": "C305",
+        "groups": "2º B, 2º C"
+      },
+      {
+        "course": "Gestión de Proyectos",
+        "professor": "Dra. Sánchez",
+        "room": "LAB102",
+        "groups": "3º C",
+        "duration": 2,
+        "requiresComputers": false,
+        "score": 5
+      }
+    ],
+    "8": [
+      {
+        "continuation": true,
+        "course": "Gestión de Proyectos",
+        "professor": "Dra. Sánchez",
+        "room": "LAB102",
+        "groups": "3º C"
+      }
+    ]
+  },
+  "Miércoles": {
+    "0": [
+      {
+        "course": "Computación Gráfica",
+        "professor": "Dr. Castro",
+        "room": "A101",
+        "groups": "3º C",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 4
+      }
+    ],
+    "1": [
+      {
+        "course": "Programación Básica",
+        "professor": "Dr. López",
+        "room": "C305",
+        "groups": "1º A, 1º D",
+        "duration": 3,
+        "requiresComputers": true,
+        "score": 3
+      },
+      {
+        "course": "Expresión Oral y Escrita",
+        "professor": "Dr. Fernández",
+        "room": "LAB101",
+        "groups": "1º A, 1º B",
+        "duration": 1,
+        "requiresComputers": false,
+        "score": 4
+      },
+      {
+        "course": "Programación Avanzada",
+        "professor": "Dr. López",
+        "room": "A103",
+        "groups": "3º A, 3º B",
+        "duration": 3,
+        "requiresComputers": true,
+        "score": 1
+      },
+      {
+        "continuation": true,
+        "course": "Computación Gráfica",
+        "professor": "Dr. Castro",
+        "room": "A101",
+        "groups": "3º C"
+      }
+    ],
+    "2": [
+      {
+        "continuation": true,
+        "course": "Programación Básica",
+        "professor": "Dr. López",
+        "room": "C305",
+        "groups": "1º A, 1º D"
+      },
+      {
+        "continuation": true,
+        "course": "Programación Avanzada",
+        "professor": "Dr. López",
+        "room": "A103",
+        "groups": "3º A, 3º B"
+      },
+      {
+        "course": "Procesamiento de Lenguaje Natural",
+        "professor": "Dr. Castro",
+        "room": "A101",
+        "groups": "3º B, 3º D",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 3
+      }
+    ],
+    "3": [
+      {
+        "continuation": true,
+        "course": "Programación Básica",
+        "professor": "Dr. López",
+        "room": "C305",
+        "groups": "1º A, 1º D"
+      },
+      {
+        "continuation": true,
+        "course": "Programación Avanzada",
+        "professor": "Dr. López",
+        "room": "A103",
+        "groups": "3º A, 3º B"
+      },
+      {
+        "course": "Ingeniería de Software",
+        "professor": "Dra. Jiménez",
+        "room": "B201",
+        "groups": "3º A, 3º C",
+        "duration": 2,
+        "requiresComputers": false,
+        "score": 4
+      },
+      {
+        "continuation": true,
+        "course": "Procesamiento de Lenguaje Natural",
+        "professor": "Dr. Castro",
+        "room": "A101",
+        "groups": "3º B, 3º D"
+      }
+    ],
+    "4": [
+      {
+        "course": "Estructuras de Datos",
+        "professor": "Dr. López",
+        "room": "B203",
+        "groups": "2º A, 2º D",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 4
+      },
+      {
+        "continuation": true,
+        "course": "Ingeniería de Software",
+        "professor": "Dra. Jiménez",
+        "room": "B201",
+        "groups": "3º A, 3º C"
+      },
+      {
+        "course": "Interacción Humano-Computadora",
+        "professor": "Dra. Jiménez",
+        "room": "A101",
+        "groups": "3º D",
+        "duration": 2,
+        "requiresComputers": false,
+        "score": 5
+      },
+      {
+        "course": "Proyecto Final",
+        "professor": "Dra. Sánchez",
+        "room": "A101",
+        "groups": "4º A, 4º B, 4º C",
+        "duration": 4,
+        "requiresComputers": false,
+        "score": 3
+      },
+      {
+        "course": "Robótica",
+        "professor": "Dra. Pérez",
+        "room": "LAB101",
+        "groups": "3º C, 4º C",
+        "duration": 3,
+        "requiresComputers": true,
+        "score": 1
+      }
+    ],
+    "5": [
+      {
+        "course": "Lógica Matemática",
+        "professor": "Dra. Pérez",
+        "room": "C302",
+        "groups": "1º A, 1º D",
+        "duration": 2,
+        "requiresComputers": false,
+        "score": 2
+      },
+      {
+        "continuation": true,
+        "course": "Estructuras de Datos",
+        "professor": "Dr. López",
+        "room": "B203",
+        "groups": "2º A, 2º D"
+      },
+      {
+        "continuation": true,
+        "course": "Interacción Humano-Computadora",
+        "professor": "Dra. Jiménez",
+        "room": "A101",
+        "groups": "3º D"
+      },
+      {
+        "continuation": true,
+        "course": "Proyecto Final",
+        "professor": "Dra. Sánchez",
+        "room": "A101",
+        "groups": "4º A, 4º B, 4º C"
+      },
+      {
+        "continuation": true,
+        "course": "Robótica",
+        "professor": "Dra. Pérez",
+        "room": "LAB101",
+        "groups": "3º C, 4º C"
+      }
+    ],
+    "6": [
+      {
+        "continuation": true,
+        "course": "Lógica Matemática",
+        "professor": "Dra. Pérez",
+        "room": "C302",
+        "groups": "1º A, 1º D"
+      },
+      {
+        "continuation": true,
+        "course": "Proyecto Final",
+        "professor": "Dra. Sánchez",
+        "room": "A101",
+        "groups": "4º A, 4º B, 4º C"
+      },
+      {
+        "continuation": true,
+        "course": "Robótica",
+        "professor": "Dra. Pérez",
+        "room": "LAB101",
+        "groups": "3º C, 4º C"
+      }
+    ],
+    "7": [
+      {
+        "continuation": true,
+        "course": "Proyecto Final",
+        "professor": "Dra. Sánchez",
+        "room": "A101",
+        "groups": "4º A, 4º B, 4º C"
+      },
+      {
+        "course": "Inglés Técnico IV",
+        "professor": "Dra. Martínez",
+        "room": "A101",
+        "groups": "4º A, 4º B, 4º C",
+        "duration": 1,
+        "requiresComputers": false,
+        "score": 4
+      },
+      {
+        "course": "Sistemas Embebidos",
+        "professor": "Dra. Pérez",
+        "room": "A101",
+        "groups": "4º C",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 4
+      },
+      {
+        "course": "Ciberseguridad",
+        "professor": "Dra. Torres",
+        "room": "A102",
+        "groups": "3º C, 4º A",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 3
+      }
+    ],
+    "8": [
+      {
+        "continuation": true,
+        "course": "Sistemas Embebidos",
+        "professor": "Dra. Pérez",
+        "room": "A101",
+        "groups": "4º C"
+      },
+      {
+        "continuation": true,
+        "course": "Ciberseguridad",
+        "professor": "Dra. Torres",
+        "room": "A102",
+        "groups": "3º C, 4º A"
+      }
+    ]
+  },
+  "Jueves": {
+    "0": [
+      {
+        "course": "Física II",
+        "professor": "Dra. Rodríguez",
+        "room": "A108",
+        "groups": "2º A",
+        "duration": 2,
+        "requiresComputers": false,
+        "score": 5
+      },
+      {
+        "course": "Aprendizaje Automático",
+        "professor": "Dr. Castro",
+        "room": "A101",
+        "groups": "4º A",
+        "duration": 3,
+        "requiresComputers": true,
+        "score": 4
+      },
+      {
+        "course": "Videojuegos",
+        "professor": "Dr. Morales",
+        "room": "A102",
+        "groups": "3º D, 4º B",
+        "duration": 3,
+        "requiresComputers": true,
+        "score": 1
+      }
+    ],
+    "1": [
+      {
+        "continuation": true,
+        "course": "Física II",
+        "professor": "Dra. Rodríguez",
+        "room": "A108",
+        "groups": "2º A"
+      },
+      {
+        "continuation": true,
+        "course": "Aprendizaje Automático",
+        "professor": "Dr. Castro",
+        "room": "A101",
+        "groups": "4º A"
+      },
+      {
+        "continuation": true,
+        "course": "Videojuegos",
+        "professor": "Dr. Morales",
+        "room": "A102",
+        "groups": "3º D, 4º B"
+      }
+    ],
+    "2": [
+      {
+        "continuation": true,
+        "course": "Aprendizaje Automático",
+        "professor": "Dr. Castro",
+        "room": "A101",
+        "groups": "4º A"
+      },
+      {
+        "continuation": true,
+        "course": "Videojuegos",
+        "professor": "Dr. Morales",
+        "room": "A102",
+        "groups": "3º D, 4º B"
+      }
+    ],
+    "3": [
+      {
+        "course": "Big Data",
+        "professor": "Dr. Ramírez",
+        "room": "A101",
+        "groups": "4º A",
+        "duration": 3,
+        "requiresComputers": true,
+        "score": 4
+      }
+    ],
+    "4": [
+      {
+        "course": "Programación Web",
+        "professor": "Dr. Morales",
+        "room": "C304",
+        "groups": "3º A, 3º D",
+        "duration": 3,
+        "requiresComputers": true,
+        "score": 3
+      },
+      {
+        "continuation": true,
+        "course": "Big Data",
+        "professor": "Dr. Ramírez",
+        "room": "A101",
+        "groups": "4º A"
+      }
+    ],
+    "5": [
+      {
+        "course": "Inglés Técnico I",
+        "professor": "Dra. Martínez",
+        "room": "LAB104",
+        "groups": "1º A, 1º B, 1º C",
+        "duration": 1,
+        "requiresComputers": false,
+        "score": 4
+      },
+      {
+        "course": "Redes Avanzadas",
+        "professor": "Dra. Martínez",
+        "room": "C302",
+        "groups": "2º D",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 4
+      },
+      {
+        "course": "Inteligencia Artificial",
+        "professor": "Dr. Castro",
+        "room": "A105",
+        "groups": "3º B",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 4
+      },
+      {
+        "continuation": true,
+        "course": "Programación Web",
+        "professor": "Dr. Morales",
+        "room": "C304",
+        "groups": "3º A, 3º D"
+      },
+      {
+        "continuation": true,
+        "course": "Big Data",
+        "professor": "Dr. Ramírez",
+        "room": "A101",
+        "groups": "4º A"
+      }
+    ],
+    "6": [
+      {
+        "continuation": true,
+        "course": "Redes Avanzadas",
+        "professor": "Dra. Martínez",
+        "room": "C302",
+        "groups": "2º D"
+      },
+      {
+        "continuation": true,
+        "course": "Inteligencia Artificial",
+        "professor": "Dr. Castro",
+        "room": "A105",
+        "groups": "3º B"
+      },
+      {
+        "continuation": true,
+        "course": "Programación Web",
+        "professor": "Dr. Morales",
+        "room": "C304",
+        "groups": "3º A, 3º D"
+      },
+      {
+        "course": "Desarrollo Móvil",
+        "professor": "Dr. Morales",
+        "room": "A101",
+        "groups": "4º B",
+        "duration": 3,
+        "requiresComputers": true,
+        "score": 4
+      }
+    ],
+    "7": [
+      {
+        "continuation": true,
+        "course": "Desarrollo Móvil",
+        "professor": "Dr. Morales",
+        "room": "A101",
+        "groups": "4º B"
+      }
+    ],
+    "8": [
+      {
+        "continuation": true,
+        "course": "Desarrollo Móvil",
+        "professor": "Dr. Morales",
+        "room": "A101",
+        "groups": "4º B"
+      }
+    ]
+  },
+  "Viernes": {
+    "0": [
+      {
+        "course": "Calidad de Software",
+        "professor": "Dr. Fernández",
+        "room": "A101",
+        "groups": "4º C",
+        "duration": 2,
+        "requiresComputers": false,
+        "score": 5
+      }
+    ],
+    "1": [
+      {
+        "continuation": true,
+        "course": "Calidad de Software",
+        "professor": "Dr. Fernández",
+        "room": "A101",
+        "groups": "4º C"
+      }
+    ],
+    "2": [],
+    "3": [
+      {
+        "course": "Interfaces de Usuario",
+        "professor": "Dra. Jiménez",
+        "room": "LAB101",
+        "groups": "2º C",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 5
+      },
+      {
+        "course": "Internet de las Cosas",
+        "professor": "Dra. Torres",
+        "room": "A101",
+        "groups": "4º A, 4º C",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 3
+      }
+    ],
+    "4": [
+      {
+        "continuation": true,
+        "course": "Interfaces de Usuario",
+        "professor": "Dra. Jiménez",
+        "room": "LAB101",
+        "groups": "2º C"
+      },
+      {
+        "continuation": true,
+        "course": "Internet de las Cosas",
+        "professor": "Dra. Torres",
+        "room": "A101",
+        "groups": "4º A, 4º C"
+      }
+    ],
+    "5": [
+      {
+        "course": "Visión por Computadora",
+        "professor": "Dr. Castro",
+        "room": "A101",
+        "groups": "4º B",
+        "duration": 2,
+        "requiresComputers": true,
+        "score": 4
+      }
+    ],
+    "6": [
+      {
+        "continuation": true,
+        "course": "Visión por Computadora",
+        "professor": "Dr. Castro",
+        "room": "A101",
+        "groups": "4º B"
+      }
+    ],
+    "7": [
+      {
+        "course": "Física I",
+        "professor": "Dra. Rodríguez",
+        "room": "C301",
+        "groups": "1º A, 1º C",
+        "duration": 2,
+        "requiresComputers": false,
+        "score": 4
+      },
+      {
+        "course": "Auditoría de Sistemas",
+        "professor": "Dr. Díaz",
+        "room": "A101",
+        "groups": "4º A",
+        "duration": 2,
+        "requiresComputers": false,
+        "score": 5
+      }
+    ],
+    "8": [
+      {
+        "continuation": true,
+        "course": "Física I",
+        "professor": "Dra. Rodríguez",
+        "room": "C301",
+        "groups": "1º A, 1º C"
+      },
+      {
+        "course": "Historia de la Computación",
+        "professor": "Dra. Rodríguez",
+        "room": "C304",
+        "groups": "1º B",
+        "duration": 1,
+        "requiresComputers": false,
+        "score": 4
+      },
+      {
+        "continuation": true,
+        "course": "Auditoría de Sistemas",
+        "professor": "Dr. Díaz",
+        "room": "A101",
+        "groups": "4º A"
+      }
+    ]
+  }
+}
