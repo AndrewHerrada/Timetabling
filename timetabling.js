@@ -39,13 +39,14 @@ class StudentGroup {
 }
 
 class Course {
-    constructor(id, name, professor, studentGroups, requiresComputers = false, duration = 1) {
+    constructor(id, name, professor, studentGroups, requiresComputers = false, duration = 1, requiresConsecutiveSlots = true) {
         this.id = id;
         this.name = name;
         this.professor = professor;
         this.studentGroups = Array.isArray(studentGroups) ? studentGroups : [studentGroups];
         this.requiresComputers = requiresComputers;
-        this.duration = duration; // Número de slots consecutivos que ocupa la clase
+        this.duration = duration; // Número de slots que ocupa la clase
+        this.requiresConsecutiveSlots = requiresConsecutiveSlots; // Nueva propiedad
     }
 }
 
@@ -66,11 +67,33 @@ class TimeSlot {
 }
 
 class ClassAssignment {
-    constructor(course, room, timeSlot) {
+    constructor(course, room, timeSlot, secondaryTimeSlots = []) {
         this.course = course;
         this.room = room;
-        this.timeSlot = timeSlot;
+        this.timeSlot = timeSlot; // Slot principal
+        this.secondaryTimeSlots = secondaryTimeSlots; // Array de slots secundarios para clases no consecutivas
         this.score = 0; // Puntuación del asignamiento según restricciones
+    }
+
+    // Método para obtener todos los slots de tiempo ocupados por esta asignación
+    getAllTimeSlots() {
+        const slots = [this.timeSlot];
+
+        if (this.course.requiresConsecutiveSlots) {
+            // Para clases con slots consecutivos, generamos los slots siguientes
+            for (let i = 1; i < this.course.duration; i++) {
+                const hourIndex = this.timeSlot.hourIndex + i;
+                // Verificar que no excede las horas por día
+                if (hourIndex < HOURS_PER_DAY) {
+                    slots.push(new TimeSlot(this.timeSlot.dayIndex, hourIndex));
+                }
+            }
+        } else {
+            // Para clases con slots no consecutivos, añadimos los slots secundarios
+            slots.push(...this.secondaryTimeSlots);
+        }
+
+        return slots;
     }
 }
 
@@ -132,24 +155,53 @@ class Chromosome {
             score++;
         }
 
+        // 6. Nueva restricción blanda para verificar si las clases de múltiples slots cumplen con el requisito de consecutividad
+        if (assignment.course.duration > 1) {
+            if (assignment.course.requiresConsecutiveSlots) {
+                // Si requiere slots consecutivos, verificar que todos los slots están en el mismo día y son consecutivos
+                const slots = assignment.getAllTimeSlots();
+                const isConsecutive = slots.length === assignment.course.duration &&
+                    slots.every((slot, index) =>
+                        index === 0 ||
+                        (slot.dayIndex === slots[index - 1].dayIndex &&
+                            slot.hourIndex === slots[index - 1].hourIndex + 1)
+                    );
+
+                // Aquí podríamos añadir puntos adicionales, o restarlos si no se cumple
+                // Por ejemplo, podríamos modificar el score final basado en esto
+                if (!isConsecutive) {
+                    score -= 0.5; // Penalización leve para esta restricción blanda
+                }
+            } else {
+                // Si no requiere slots consecutivos, verificar que todos los slots están asignados
+                const hasAllSlots = assignment.secondaryTimeSlots.length === assignment.course.duration - 1;
+                if (!hasAllSlots) {
+                    score -= 0.5; // Penalización leve si faltan slots
+                }
+            }
+        }
+
         return score;
     }
 
     // Verificar si el aula está disponible para la asignación
     isRoomAvailableForAssignment(newAssignment) {
+        const newSlots = newAssignment.getAllTimeSlots();
+
         for (const assignment of this.classAssignments) {
             if (assignment === newAssignment) continue;
 
             if (assignment.room.id === newAssignment.room.id) {
-                // Verificar si hay superposición de tiempo
-                const startSlot1 = assignment.timeSlot.getSlotIndex();
-                const endSlot1 = startSlot1 + assignment.course.duration - 1;
+                const existingSlots = assignment.getAllTimeSlots();
 
-                const startSlot2 = newAssignment.timeSlot.getSlotIndex();
-                const endSlot2 = startSlot2 + newAssignment.course.duration - 1;
-
-                if (startSlot1 <= endSlot2 && startSlot2 <= endSlot1) {
-                    return false; // Hay superposición
+                // Verificar si hay superposición entre alguno de los slots nuevos y existentes
+                for (const newSlot of newSlots) {
+                    for (const existingSlot of existingSlots) {
+                        if (newSlot.dayIndex === existingSlot.dayIndex &&
+                            newSlot.hourIndex === existingSlot.hourIndex) {
+                            return false; // Hay superposición
+                        }
+                    }
                 }
             }
         }
@@ -253,13 +305,19 @@ class TimetableGenerator {
                 const randomRoomIndex = Math.floor(Math.random() * this.rooms.length);
                 const room = this.rooms[randomRoomIndex];
 
-                // Elegir un slot de tiempo aleatorio
+                // Elegir un slot de tiempo aleatorio principal
                 const randomDayIndex = Math.floor(Math.random() * DAYS_OF_WEEK.length);
-                const randomHourIndex = Math.floor(Math.random() * (HOURS_PER_DAY - course.duration + 1));
+                const maxHourIndex = course.requiresConsecutiveSlots ?
+                    (HOURS_PER_DAY - course.duration) :
+                    (HOURS_PER_DAY - 1);
+                const randomHourIndex = Math.floor(Math.random() * (maxHourIndex + 1));
                 const timeSlot = new TimeSlot(randomDayIndex, randomHourIndex);
 
+                // Generar slots secundarios para clases no consecutivas
+                const secondaryTimeSlots = this.generateSecondaryTimeSlots(course, timeSlot);
+
                 // Crear asignación y añadirla al cromosoma
-                const assignment = new ClassAssignment(course, room, timeSlot);
+                const assignment = new ClassAssignment(course, room, timeSlot, secondaryTimeSlots);
                 chromosome.addClassAssignment(assignment);
             }
 
@@ -448,6 +506,58 @@ class TimetableGenerator {
             assignment.timeSlot = newTimeSlot;
         }
     }
+    generateSecondaryTimeSlots(course, mainTimeSlot) {
+        if (course.requiresConsecutiveSlots || course.duration <= 1) {
+            return [];
+        }
+
+        const secondarySlots = [];
+        const remainingSlots = course.duration - 1;
+
+        // Generar slots secundarios aleatorios diferentes al principal
+        while (secondarySlots.length < remainingSlots) {
+            const randomDayIndex = Math.floor(Math.random() * DAYS_OF_WEEK.length);
+            const randomHourIndex = Math.floor(Math.random() * HOURS_PER_DAY);
+            const slot = new TimeSlot(randomDayIndex, randomHourIndex);
+
+            // Verificar que no sea igual al slot principal o a uno ya añadido
+            const isUniqueSlot = (
+                (slot.dayIndex !== mainTimeSlot.dayIndex || slot.hourIndex !== mainTimeSlot.hourIndex) &&
+                !secondarySlots.some(s => s.dayIndex === slot.dayIndex && s.hourIndex === slot.hourIndex)
+            );
+
+            if (isUniqueSlot) {
+                secondarySlots.push(slot);
+            }
+        }
+
+        return secondarySlots;
+    }
+    addConsecutiveSlotsConstraint() {
+        this.addSoftConstraint(
+            (assignment) => {
+                if (assignment.course.duration <= 1) return 1.0; // No aplica para clases de un solo slot
+
+                if (assignment.course.requiresConsecutiveSlots) {
+                    // Verificar que todos los slots son consecutivos
+                    const slots = assignment.getAllTimeSlots();
+                    const isConsecutive = slots.length === assignment.course.duration &&
+                        slots.every((slot, index) =>
+                            index === 0 ||
+                            (slot.dayIndex === slots[index - 1].dayIndex &&
+                                slot.hourIndex === slots[index - 1].hourIndex + 1)
+                        );
+
+                    return isConsecutive ? 1.0 : 0.0;
+                } else {
+                    // Para clases no consecutivas, verificar que todos los slots están en el mismo aula
+                    return assignment.secondaryTimeSlots.length === (assignment.course.duration - 1) ? 1.0 : 0.0;
+                }
+            },
+            0.5, // Peso
+            "Preferir clases con slots consecutivos cuando sea requerido"
+        );
+    }
     // Imprimir el horario generado
     printTimetable(chromosome) {
         console.log("\n===== HORARIO GENERADO =====");
@@ -466,43 +576,23 @@ class TimetableGenerator {
 
         // Llenar la estructura JSON con las asignaciones
         for (const assignment of chromosome.classAssignments) {
-            const dayName = DAYS_OF_WEEK[assignment.timeSlot.dayIndex];
-            const startHour = assignment.timeSlot.hourIndex;
-            const duration = assignment.course.duration;
+            // Procesar el slot principal
+            this.addAssignmentToJSON(timetableJSON, assignment, assignment.timeSlot, false);
 
-            // Añadir la entrada principal para el inicio de la clase
-            const mainEntry = {
-                course: assignment.course.name,
-                professor: assignment.course.professor.name,
-                room: assignment.room.id,
-                groups: assignment.course.studentGroups.map(g => g.name).join(', '),
-                duration: duration,
-                requiresComputers: assignment.course.requiresComputers,
-                score: assignment.score // Puntuación de esta asignación específica
-            };
-            // Asegurarse de que el array existe (aunque ya debería por la inicialización)
-            if (!timetableJSON[dayName][startHour]) {
-                timetableJSON[dayName][startHour] = [];
+            // Procesar slots secundarios para clases no consecutivas
+            if (!assignment.course.requiresConsecutiveSlots && assignment.secondaryTimeSlots) {
+                for (const slot of assignment.secondaryTimeSlots) {
+                    this.addAssignmentToJSON(timetableJSON, assignment, slot, false);
+                }
             }
-            timetableJSON[dayName][startHour].push(mainEntry);
-
-            // Añadir entradas de continuación para las horas siguientes si dura más de 1 hora
-            for (let i = 1; i < duration; i++) {
-                const currentHour = startHour + i;
-                // Verificar si la hora está dentro del rango diario
-                if (currentHour < HOURS_PER_DAY) {
-                    const continuationEntry = {
-                        continuation: true,
-                        course: assignment.course.name,
-                        professor: assignment.course.professor.name,
-                        room: assignment.room.id,
-                        groups: assignment.course.studentGroups.map(g => g.name).join(', ')
-                    };
-                    // Asegurarse de que el array existe
-                    if (!timetableJSON[dayName][currentHour]) {
-                        timetableJSON[dayName][currentHour] = [];
+            // Procesar slots consecutivos
+            else if (assignment.course.requiresConsecutiveSlots && assignment.course.duration > 1) {
+                for (let i = 1; i < assignment.course.duration; i++) {
+                    const hourIndex = assignment.timeSlot.hourIndex + i;
+                    if (hourIndex < HOURS_PER_DAY) {
+                        const continuationSlot = new TimeSlot(assignment.timeSlot.dayIndex, hourIndex);
+                        this.addAssignmentToJSON(timetableJSON, assignment, continuationSlot, true);
                     }
-                    timetableJSON[dayName][currentHour].push(continuationEntry);
                 }
             }
         }
@@ -510,7 +600,7 @@ class TimetableGenerator {
         // Imprimir la salida JSON formateada
         console.log("\n===== DATOS DEL HORARIO (JSON) =====");
         console.log("Copia estos datos para usar en el visualizador HTML:");
-        const jsonOutput = JSON.stringify(timetableJSON, null, 2); // null, 2 para indentación
+        const jsonOutput = JSON.stringify(timetableJSON, null, 2);
         console.log(jsonOutput);
         console.log("=====================================");
 
@@ -525,6 +615,30 @@ class TimetableGenerator {
         } else {
             console.log("Guardado de archivo no disponible en este entorno (requiere Node.js). Copia la salida JSON de arriba.");
         }
+    }
+    addAssignmentToJSON(timetableJSON, assignment, slot, isContinuation) {
+        const dayName = DAYS_OF_WEEK[slot.dayIndex];
+        const hour = slot.hourIndex;
+
+        // Crear la entrada para el horario
+        const entry = {
+            course: assignment.course.name,
+            professor: assignment.course.professor.name,
+            room: assignment.room.id,
+            groups: assignment.course.studentGroups.map(g => g.name).join(', '),
+            duration: assignment.course.duration,
+            requiresComputers: assignment.course.requiresComputers,
+            requiresConsecutiveSlots: assignment.course.requiresConsecutiveSlots,
+            continuation: isContinuation,
+            score: assignment.score
+        };
+
+        // Asegurarse de que el array existe
+        if (!timetableJSON[dayName][hour]) {
+            timetableJSON[dayName][hour] = [];
+        }
+
+        timetableJSON[dayName][hour].push(entry);
     }
 }
 
@@ -607,85 +721,50 @@ function runExample() {
         new StudentGroup("G15", "4º C", 18)
     ];
 
-    // Crear cursos
+    // Crear cursos con el nuevo parámetro requiresConsecutiveSlots
     const courses = [
-        // Cursos de 1º
-        new Course("C1", "Matemáticas I", professors[0], [studentGroups[0], studentGroups[1]], false, 2),
-        new Course("C2", "Física I", professors[1], [studentGroups[0], studentGroups[2]], false, 2),
-        new Course("C3", "Programación Básica", professors[2], [studentGroups[0], studentGroups[3]], true, 3),
-        new Course("C4", "Introducción a Bases de Datos", professors[2], [studentGroups[1], studentGroups[2]], true, 2),
-        new Course("C5", "Inglés Técnico I", professors[3], [studentGroups[0], studentGroups[1], studentGroups[2]], false, 1),
-        new Course("C6", "Historia de la Computación", professors[1], studentGroups[1], false, 1),
-        new Course("C7", "Álgebra Lineal", professors[0], [studentGroups[2], studentGroups[3]], false, 2),
-        new Course("C8", "Introducción a Redes", professors[3], studentGroups[3], true, 2),
-        new Course("C9", "Expresión Oral y Escrita", professors[4], [studentGroups[0], studentGroups[1]], false, 1),
-        new Course("C10", "Metodología de la Investigación", professors[5], studentGroups[2], false, 1),
-        new Course("C11", "Ética Profesional", professors[6], studentGroups[3], false, 1),
-        new Course("C12", "Lógica Matemática", professors[7], [studentGroups[0], studentGroups[3]], false, 2),
+        // Cursos de 1º - algunos requieren slots consecutivos y otros no
+        new Course("C1", "Matemáticas I", professors[0], [studentGroups[0], studentGroups[1]], false, 2, true), // Slots consecutivos
+        new Course("C2", "Física I", professors[1], [studentGroups[0], studentGroups[2]], false, 2, false), // Slots NO consecutivos
+        new Course("C3", "Programación Básica", professors[2], [studentGroups[0], studentGroups[3]], true, 3, true), // Slots consecutivos
+        new Course("C4", "Introducción a Bases de Datos", professors[2], [studentGroups[1], studentGroups[2]], true, 2, false), // Slots NO consecutivos
+        new Course("C5", "Inglés Técnico I", professors[3], [studentGroups[0], studentGroups[1], studentGroups[2]], false, 1, true),
+        new Course("C6", "Historia de la Computación", professors[1], studentGroups[1], false, 1, true),
+        new Course("C7", "Álgebra Lineal", professors[0], [studentGroups[2], studentGroups[3]], false, 2, true), // Slots consecutivos
+        new Course("C8", "Introducción a Redes", professors[3], studentGroups[3], true, 2, false), // Slots NO consecutivos
+        new Course("C9", "Expresión Oral y Escrita", professors[4], [studentGroups[0], studentGroups[1]], false, 1, true),
+        new Course("C10", "Metodología de la Investigación", professors[5], studentGroups[2], false, 1, true),
+        new Course("C11", "Ética Profesional", professors[6], studentGroups[3], false, 1, true),
+        new Course("C12", "Lógica Matemática", professors[7], [studentGroups[0], studentGroups[3]], false, 2, true), // Slots consecutivos
 
         // Cursos de 2º
-        new Course("C13", "Matemáticas II", professors[0], [studentGroups[4], studentGroups[5]], false, 2),
-        new Course("C14", "Física II", professors[1], studentGroups[4], false, 2),
-        new Course("C15", "Estructuras de Datos", professors[2], [studentGroups[4], studentGroups[7]], true, 2),
-        new Course("C16", "Diseño de Bases de Datos", professors[8], [studentGroups[5], studentGroups[6]], true, 2),
-        new Course("C17", "Inglés Técnico II", professors[3], [studentGroups[4], studentGroups[5], studentGroups[6]], false, 1),
-        new Course("C18", "Arquitectura de Computadoras", professors[9], studentGroups[6], false, 2),
-        new Course("C19", "Estadística", professors[10], [studentGroups[5], studentGroups[7]], false, 2),
-        new Course("C20", "Redes Avanzadas", professors[3], studentGroups[7], true, 2),
-        new Course("C21", "Sistemas Operativos", professors[11], [studentGroups[4], studentGroups[7]], true, 2),
-        new Course("C22", "Análisis de Algoritmos", professors[12], [studentGroups[5], studentGroups[6]], false, 2),
-        new Course("C23", "Matemáticas Discretas", professors[10], studentGroups[4], false, 1),
-        new Course("C24", "Interfaces de Usuario", professors[13], studentGroups[6], true, 2),
+        new Course("C13", "Matemáticas II", professors[0], [studentGroups[4], studentGroups[5]], false, 2, true), // Slots consecutivos
+        new Course("C14", "Física II", professors[1], studentGroups[4], false, 2, false), // Slots NO consecutivos
+        new Course("C15", "Estructuras de Datos", professors[2], [studentGroups[4], studentGroups[7]], true, 2, true), // Slots consecutivos
+        new Course("C16", "Diseño de Bases de Datos", professors[8], [studentGroups[5], studentGroups[6]], true, 2, false), // Slots NO consecutivos
+        new Course("C17", "Inglés Técnico II", professors[3], [studentGroups[4], studentGroups[5], studentGroups[6]], false, 1, true),
+        new Course("C18", "Arquitectura de Computadoras", professors[9], studentGroups[6], false, 2, false), // Slots NO consecutivos
+        new Course("C19", "Estadística", professors[10], [studentGroups[5], studentGroups[7]], false, 2, true), // Slots consecutivos
+        new Course("C20", "Redes Avanzadas", professors[3], studentGroups[7], true, 2, false), // Slots NO consecutivos
 
-        // Cursos de 3º
-        new Course("C25", "Programación Avanzada", professors[2], [studentGroups[8], studentGroups[9]], true, 3),
-        new Course("C26", "Ingeniería de Software", professors[13], [studentGroups[8], studentGroups[10]], false, 2),
-        new Course("C27", "Inteligencia Artificial", professors[14], studentGroups[9], true, 2),
-        new Course("C28", "Sistemas Distribuidos", professors[11], [studentGroups[10], studentGroups[11]], true, 2),
-        new Course("C29", "Inglés Técnico III", professors[3], [studentGroups[8], studentGroups[9], studentGroups[10]], false, 1),
-        new Course("C30", "Seguridad Informática", professors[9], studentGroups[11], true, 2),
-        new Course("C31", "Análisis Numérico", professors[0], [studentGroups[8], studentGroups[11]], false, 2),
-        new Course("C32", "Gestión de Proyectos", professors[5], studentGroups[10], false, 2),
-        new Course("C33", "Programación Web", professors[12], [studentGroups[8], studentGroups[11]], true, 3),
-        new Course("C34", "Bases de Datos Avanzadas", professors[8], studentGroups[9], true, 2),
-        new Course("C35", "Computación Gráfica", professors[14], studentGroups[10], true, 2),
-        new Course("C36", "Interacción Humano-Computadora", professors[13], studentGroups[11], false, 2),
-
-        // Cursos de 4º
-        new Course("C37", "Proyecto Final", professors[5], [studentGroups[12], studentGroups[13], studentGroups[14]], false, 4),
-        new Course("C38", "Emprendimiento", professors[6], [studentGroups[12], studentGroups[13]], false, 2),
-        new Course("C39", "Big Data", professors[8], studentGroups[12], true, 3),
-        new Course("C40", "Cloud Computing", professors[11], [studentGroups[13], studentGroups[14]], true, 2),
-        new Course("C41", "Inglés Técnico IV", professors[3], [studentGroups[12], studentGroups[13], studentGroups[14]], false, 1),
-        new Course("C42", "Ética y Legislación", professors[6], studentGroups[14], false, 1),
-        new Course("C43", "Aprendizaje Automático", professors[14], studentGroups[12], true, 3),
-        new Course("C44", "Desarrollo Móvil", professors[12], studentGroups[13], true, 3),
-        new Course("C45", "Sistemas Embebidos", professors[7], studentGroups[14], true, 2),
-        new Course("C46", "Internet de las Cosas", professors[9], [studentGroups[12], studentGroups[14]], true, 2),
-        new Course("C47", "Visión por Computadora", professors[14], studentGroups[13], true, 2),
-        new Course("C48", "Auditoría de Sistemas", professors[10], studentGroups[12], false, 2),
-        new Course("C49", "Minería de Datos", professors[8], studentGroups[13], true, 2),
-        new Course("C50", "Calidad de Software", professors[4], studentGroups[14], false, 2),
-
-        // Asignaturas optativas
-        new Course("C51", "Blockchain", professors[9], [studentGroups[12], studentGroups[13]], true, 2),
-        new Course("C52", "Robótica", professors[7], [studentGroups[10], studentGroups[14]], true, 3),
-        new Course("C53", "Realidad Virtual", professors[14], [studentGroups[11], studentGroups[13]], true, 2),
-        new Course("C54", "Comercio Electrónico", professors[6], [studentGroups[8], studentGroups[12]], false, 2),
-        new Course("C55", "Bioinformática", professors[10], [studentGroups[9], studentGroups[14]], true, 2),
-        new Course("C56", "Videojuegos", professors[12], [studentGroups[11], studentGroups[13]], true, 3),
-        new Course("C57", "Ciberseguridad", professors[9], [studentGroups[10], studentGroups[12]], true, 2),
-        new Course("C58", "Procesamiento de Lenguaje Natural", professors[14], [studentGroups[9], studentGroups[11]], true, 2)
+        // Añadiendo sólo algunos cursos más para simplificar el ejemplo
+        new Course("C21", "Sistemas Operativos", professors[11], [studentGroups[4], studentGroups[7]], true, 2, true), // Slots consecutivos
+        new Course("C22", "Análisis de Algoritmos", professors[12], [studentGroups[5], studentGroups[6]], false, 2, false), // Slots NO consecutivos
+        new Course("C23", "Matemáticas Discretas", professors[10], studentGroups[4], false, 1, true),
+        new Course("C24", "Interfaces de Usuario", professors[13], studentGroups[6], true, 2, true) // Slots consecutivos
     ];
 
     // Crear generador de horarios
     const generator = new TimetableGenerator(rooms, professors, studentGroups, courses);
 
-    // Configurar parámetros para un problema más grande
-    generator.populationSize = 200;    // Aumentado para manejar más cursos
-    generator.maxGenerations = 5000;   // Más generaciones para mejorar convergencia
-    generator.mutationRate = 0.15;     // Ligeramente aumentado para mayor diversidad
-    generator.elitismCount = 15;       // Mantener más soluciones élite
+    // Configurar parámetros
+    generator.populationSize = 200;
+    generator.maxGenerations = 1000; // Reducido para ejemplo
+    generator.mutationRate = 0.15;
+    generator.elitismCount = 15;
+
+    // Añadir restricción para slots consecutivos/no consecutivos
+    generator.addConsecutiveSlotsConstraint();
 
     // Añadir una restricción dura personalizada (no clases después de las 4 PM para el grupo 1º A)
     generator.addHardConstraint(
@@ -742,7 +821,7 @@ function runExample() {
     // Contar cuántas asignaciones tienen cada puntuación
     const scoreDistribution = [0, 0, 0, 0, 0, 0]; // Índice 0 a 5 para cada puntuación posible
     bestTimetable.classAssignments.forEach(assignment => {
-        scoreDistribution[assignment.score]++;
+        scoreDistribution[Math.round(assignment.score)]++; // Redondeamos por si hay puntuaciones con decimales
     });
 
     // Mostrar distribución
@@ -751,13 +830,52 @@ function runExample() {
         console.log(`  Asignaciones con puntuación ${i}: ${scoreDistribution[i]} (${((scoreDistribution[i] / courses.length) * 100).toFixed(2)}%)`);
     }
 
+    // Análisis de restricción de slots consecutivos/no consecutivos
+    console.log("\nAnálisis de restricción de slots consecutivos/no consecutivos:");
+    let consecutiveRequired = 0;
+    let consecutiveRequiredFulfilled = 0;
+    let nonConsecutiveRequired = 0;
+    let nonConsecutiveRequiredFulfilled = 0;
+
+    bestTimetable.classAssignments.forEach(assignment => {
+        const course = assignment.course;
+        if (course.duration > 1) {
+            if (course.requiresConsecutiveSlots) {
+                consecutiveRequired++;
+
+                // Verificar si todos los slots son consecutivos
+                const slots = assignment.getAllTimeSlots();
+                const isConsecutive = slots.length === course.duration &&
+                    slots.every((slot, index) =>
+                        index === 0 ||
+                        (slot.dayIndex === slots[index - 1].dayIndex &&
+                            slot.hourIndex === slots[index - 1].hourIndex + 1)
+                    );
+
+                if (isConsecutive) {
+                    consecutiveRequiredFulfilled++;
+                }
+            } else {
+                nonConsecutiveRequired++;
+
+                // Verificar si tiene todos los slots secundarios necesarios
+                if (assignment.secondaryTimeSlots &&
+                    assignment.secondaryTimeSlots.length === course.duration - 1) {
+                    nonConsecutiveRequiredFulfilled++;
+                }
+            }
+        }
+    });
+
+    console.log(`  Cursos que requieren slots consecutivos: ${consecutiveRequiredFulfilled}/${consecutiveRequired} cumplidos (${((consecutiveRequiredFulfilled / consecutiveRequired) * 100).toFixed(2)}%)`);
+    console.log(`  Cursos que requieren slots NO consecutivos: ${nonConsecutiveRequiredFulfilled}/${nonConsecutiveRequired} cumplidos (${((nonConsecutiveRequiredFulfilled / nonConsecutiveRequired) * 100).toFixed(2)}%)`);
+
     // Imprimir horario
     generator.printTimetable(bestTimetable);
 }
 
 // Ejecutar ejemplo
 runExample();
-
 // Exportar clases para uso en otros módulos
 module.exports = {
     Room,
