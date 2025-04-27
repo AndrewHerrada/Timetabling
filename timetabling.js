@@ -4,7 +4,8 @@
 // Constantes
 const fs = (typeof require !== 'undefined') ? require('fs') : null;
 const DAYS_OF_WEEK = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
-const HOURS_PER_DAY = 9; // Ej: 8:00 AM - 5:00 PM
+//const HOURS_PER_DAY = 9; // Ej: 8:00 AM - 5:00 PM
+const HOURS_PER_DAY = 6; // 15:00 - 21:00
 const TIME_SLOTS = DAYS_OF_WEEK.length * HOURS_PER_DAY;
 
 // Clases base
@@ -58,8 +59,11 @@ class TimeSlot {
         this.hourIndex = hourIndex;
     }
 
+    // toString() {
+    //     return `${DAYS_OF_WEEK[this.dayIndex]}, ${this.hourIndex + 8}:00`; // Asumiendo que el día comienza a las 8:00
+    // }
     toString() {
-        return `${DAYS_OF_WEEK[this.dayIndex]}, ${this.hourIndex + 8}:00`; // Asumiendo que el día comienza a las 8:00
+        return `${DAYS_OF_WEEK[this.dayIndex]}, ${this.hourIndex + 15}:00`; // Día comienza a las 15:00
     }
 
     // Obtener índice global del slot
@@ -771,10 +775,10 @@ class TimetableGenerator {
 function runExample() {
     // Crear aulas, incluyendo las específicas para música y clases audio-visuales
     const rooms = [
-        new Room("F-101", 25, false),
-        new Room("F-102", 25, false),
-        new Room("F-103", 25, false),
-        new Room("F-104", 25, false),
+        // new Room("F-101", 25, false),
+        // new Room("F-102", 25, false),
+        // new Room("F-103", 25, false),
+        // new Room("F-104", 25, false),
         new Room("B-101", 33, false),
         new Room("B-102", 33, false),
         new Room("B-103", 33, false),
@@ -863,38 +867,38 @@ function runExample() {
 
     // Crear cursos con la nueva estructura que incluye requiredRoomId
     const courses = [
-        new Course("C1", "Canto Infantil", professors[3], studentGroups[0], false, 2, false),
-        new Course("C2", "Canto Infantil", professors[3], studentGroups[1], false, 2, false),
-        new Course("C3", "Teclado", professors[24], studentGroups[0], false, 2, false, "F-101"),
-        new Course("C4", "Teclado", professors[22], studentGroups[1], false, 2, false, "F-101"),
-        new Course("C5", "Creatividad Artistica", professors[25], studentGroups[0], false, 2, false),
-        new Course("C6", "Creatividad Artistica", professors[25], studentGroups[1], false, 2, false),
-        new Course("C7", "Ritmica Infantil", professors[5], studentGroups[0], false, 2, false),
-        new Course("C8", "Ritmica Infantil", professors[5], studentGroups[1], false, 2, false),
-        new Course("C9", "Apreciacion Musical", professors[22], studentGroups[0], false, 1, true, "F-103"),
-        new Course("C10", "Apreciacion Musical", professors[24], studentGroups[1], false, 1, true, "F-103"),
-        new Course("C11", "Ritmica Infantil", professors[5], studentGroups[2], false, 2, false),
-        new Course("C12", "Ritmica Infantil", professors[5], studentGroups[3], false, 2, false),
-        new Course("C13", "Teclado", professors[17], studentGroups[2], false, 2, false, "F-101"),
-        new Course("C14", "Teclado", professors[17], studentGroups[3], false, 2, false, "F-101"),
-        new Course("C15", "Creatividad Artistica", professors[17], studentGroups[2], false, 2, false),
-        new Course("C16", "Creatividad Artistica", professors[17], studentGroups[3], false, 2, false),
-        new Course("C17", "Apreciacion Musical", professors[10], studentGroups[2], false, 1, true, "F-103"),
-        new Course("C18", "Apreciacion Musical", professors[10], studentGroups[3], false, 1, true, "F-103"),
-        new Course("C19", "Canto Infantil", professors[3], studentGroups[2], false, 2, false),
-        new Course("C20", "Canto Infantil", professors[3], studentGroups[3], false, 2, false),
-        new Course("C21", "Ritmica Infantil", professors[5], studentGroups[4], false, 2, false),
-        new Course("C22", "Ritmica Infantil", professors[5], studentGroups[5], false, 2, false),
-        new Course("C23", "Teclado ", professors[14], studentGroups[4], false, 1, true, "F-101"),
-        new Course("C24", "Teclado ", professors[17], studentGroups[5], false, 1, true, "F-101"),
-        new Course("C25", "Desarrollo Intelectual", professors[18], studentGroups[4], false, 1, true),
-        new Course("C26", "Desarrollo Intelectual", professors[25], studentGroups[5], false, 1, true),
-        new Course("C27", "Apreciacion Musical", professors[10], studentGroups[4], false, 1, true, "F-103"),
-        new Course("C28", "Apreciacion Musical", professors[17], studentGroups[5], false, 1, true, "F-103"),
-        new Course("C29", "Canto Infantil", professors[3], studentGroups[4], false, 2, false),
-        new Course("C30", "Canto Infantil", professors[3], studentGroups[5], false, 2, false),
-        new Course("C31", "Flauta Dulce", professors[13], studentGroups[4], false, 2, false),
-        new Course("C32", "Flauta Dulce", professors[13], studentGroups[5], false, 2, false),
+        // new Course("C1", "Canto Infantil", professors[3], studentGroups[0], false, 2, false),
+        // new Course("C2", "Canto Infantil", professors[3], studentGroups[1], false, 2, false),
+        // new Course("C3", "Teclado", professors[24], studentGroups[0], false, 2, false, "F-101"),
+        // new Course("C4", "Teclado", professors[22], studentGroups[1], false, 2, false, "F-101"),
+        // new Course("C5", "Creatividad Artistica", professors[25], studentGroups[0], false, 2, false),
+        // new Course("C6", "Creatividad Artistica", professors[25], studentGroups[1], false, 2, false),
+        // new Course("C7", "Ritmica Infantil", professors[5], studentGroups[0], false, 2, false),
+        // new Course("C8", "Ritmica Infantil", professors[5], studentGroups[1], false, 2, false),
+        // new Course("C9", "Apreciacion Musical", professors[22], studentGroups[0], false, 1, true, "F-103"),
+        // new Course("C10", "Apreciacion Musical", professors[24], studentGroups[1], false, 1, true, "F-103"),
+        // new Course("C11", "Ritmica Infantil", professors[5], studentGroups[2], false, 2, false),
+        // new Course("C12", "Ritmica Infantil", professors[5], studentGroups[3], false, 2, false),
+        // new Course("C13", "Teclado", professors[17], studentGroups[2], false, 2, false, "F-101"),
+        // new Course("C14", "Teclado", professors[17], studentGroups[3], false, 2, false, "F-101"),
+        // new Course("C15", "Creatividad Artistica", professors[17], studentGroups[2], false, 2, false),
+        // new Course("C16", "Creatividad Artistica", professors[17], studentGroups[3], false, 2, false),
+        // new Course("C17", "Apreciacion Musical", professors[10], studentGroups[2], false, 1, true, "F-103"),
+        // new Course("C18", "Apreciacion Musical", professors[10], studentGroups[3], false, 1, true, "F-103"),
+        // new Course("C19", "Canto Infantil", professors[3], studentGroups[2], false, 2, false),
+        // new Course("C20", "Canto Infantil", professors[3], studentGroups[3], false, 2, false),
+        // new Course("C21", "Ritmica Infantil", professors[5], studentGroups[4], false, 2, false),
+        // new Course("C22", "Ritmica Infantil", professors[5], studentGroups[5], false, 2, false),
+        // new Course("C23", "Teclado ", professors[14], studentGroups[4], false, 1, true, "F-101"),
+        // new Course("C24", "Teclado ", professors[17], studentGroups[5], false, 1, true, "F-101"),
+        // new Course("C25", "Desarrollo Intelectual", professors[18], studentGroups[4], false, 1, true),
+        // new Course("C26", "Desarrollo Intelectual", professors[25], studentGroups[5], false, 1, true),
+        // new Course("C27", "Apreciacion Musical", professors[10], studentGroups[4], false, 1, true, "F-103"),
+        // new Course("C28", "Apreciacion Musical", professors[17], studentGroups[5], false, 1, true, "F-103"),
+        // new Course("C29", "Canto Infantil", professors[3], studentGroups[4], false, 2, false),
+        // new Course("C30", "Canto Infantil", professors[3], studentGroups[5], false, 2, false),
+        // new Course("C31", "Flauta Dulce", professors[13], studentGroups[4], false, 2, false),
+        // new Course("C32", "Flauta Dulce", professors[13], studentGroups[5], false, 2, false),
         new Course("C33", "Solfeo-Ritmica", professors[1], studentGroups[6], false, 2, false),
         new Course("C34", "Solfeo-Ritmica", professors[1], studentGroups[7], false, 2, false),
         new Course("C35", "Lecto-Escritura", professors[15], studentGroups[6], false, 1, true),
