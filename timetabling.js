@@ -39,14 +39,16 @@ class StudentGroup {
 }
 
 class Course {
-    constructor(id, name, professor, studentGroups, requiresComputers = false, duration = 1, requiresConsecutiveSlots = true) {
+    constructor(id, name, professor, studentGroups, requiresComputers = false, duration = 1,
+        requiresConsecutiveSlots = true, requiredRoomId = null) {
         this.id = id;
         this.name = name;
         this.professor = professor;
         this.studentGroups = Array.isArray(studentGroups) ? studentGroups : [studentGroups];
         this.requiresComputers = requiresComputers;
         this.duration = duration; // Número de slots que ocupa la clase
-        this.requiresConsecutiveSlots = requiresConsecutiveSlots; // Nueva propiedad
+        this.requiresConsecutiveSlots = requiresConsecutiveSlots; // Si requiere slots consecutivos
+        this.requiredRoomId = requiredRoomId; // ID del aula específica requerida (si es necesario)
     }
 }
 
@@ -155,7 +157,19 @@ class Chromosome {
             score++;
         }
 
-        // 6. Nueva restricción blanda para verificar si las clases de múltiples slots cumplen con el requisito de consecutividad
+        // 6. Verificar si se cumple el requisito de aula específica
+        if (assignment.course.requiredRoomId !== null) {
+            // Si se requiere un aula específica, verificar que se haya asignado esa aula
+            if (assignment.room.id === assignment.course.requiredRoomId) {
+                // Esta es una restricción dura, por lo que penalizamos fuertemente si no se cumple
+                score++;
+            } else {
+                // Penalización severa (eliminamos todos los puntos) si no se asigna el aula requerida
+                score = 0;
+            }
+        }
+
+        // 7. Nueva restricción blanda para verificar si las clases de múltiples slots cumplen con el requisito de consecutividad
         if (assignment.course.duration > 1) {
             if (assignment.course.requiresConsecutiveSlots) {
                 // Si requiere slots consecutivos, verificar que todos los slots están en el mismo día y son consecutivos
@@ -301,9 +315,21 @@ class TimetableGenerator {
 
             // Asignar cada curso a un aula y horario aleatorio
             for (const course of this.courses) {
-                // Elegir un aula aleatoria
-                const randomRoomIndex = Math.floor(Math.random() * this.rooms.length);
-                const room = this.rooms[randomRoomIndex];
+                let room;
+
+                // Si el curso requiere un aula específica, asignarla directamente
+                if (course.requiredRoomId !== null) {
+                    room = this.rooms.find(r => r.id === course.requiredRoomId);
+                    // Si no se encuentra el aula requerida, asignar cualquier aula (pero tendrá penalización)
+                    if (!room) {
+                        const randomRoomIndex = Math.floor(Math.random() * this.rooms.length);
+                        room = this.rooms[randomRoomIndex];
+                    }
+                } else {
+                    // Si no requiere aula específica, asignar aleatoriamente
+                    const randomRoomIndex = Math.floor(Math.random() * this.rooms.length);
+                    room = this.rooms[randomRoomIndex];
+                }
 
                 // Elegir un slot de tiempo aleatorio principal
                 const randomDayIndex = Math.floor(Math.random() * DAYS_OF_WEEK.length);
@@ -463,16 +489,66 @@ class TimetableGenerator {
     repairAssignment(chromosome, assignment) {
         // Crear una nueva asignación con el mismo curso pero diferente aula/horario
         const course = assignment.course;
+        let roomsToTry = this.rooms;
+
+        // Si el curso requiere un aula específica, intentar primero con esa aula
+        if (course.requiredRoomId !== null) {
+            const requiredRoom = this.rooms.find(r => r.id === course.requiredRoomId);
+            if (requiredRoom) {
+                roomsToTry = [requiredRoom]; // Solo intentar con el aula requerida
+            }
+        }
 
         // Intentar diferentes combinaciones hasta encontrar una válida
-        for (const room of this.rooms) {
+        for (const room of roomsToTry) {
             for (let dayIndex = 0; dayIndex < DAYS_OF_WEEK.length; dayIndex++) {
-                for (let hourIndex = 0; hourIndex <= HOURS_PER_DAY - course.duration; hourIndex++) {
+                const maxHourIndex = course.requiresConsecutiveSlots ?
+                    (HOURS_PER_DAY - course.duration) :
+                    (HOURS_PER_DAY - 1);
+
+                for (let hourIndex = 0; hourIndex <= maxHourIndex; hourIndex++) {
                     const timeSlot = new TimeSlot(dayIndex, hourIndex);
-                    const newAssignment = new ClassAssignment(course, room, timeSlot);
+
+                    // Para clases no consecutivas, generar slots secundarios
+                    let secondaryTimeSlots = [];
+                    if (!course.requiresConsecutiveSlots && course.duration > 1) {
+                        secondaryTimeSlots = this.generateSecondaryTimeSlots(course, timeSlot);
+                    }
+
+                    const newAssignment = new ClassAssignment(course, room, timeSlot, secondaryTimeSlots);
 
                     if (this.isValidAssignment(chromosome, newAssignment)) {
                         return newAssignment;
+                    }
+                }
+            }
+        }
+
+        // Si no se encontró una combinación válida con el aula requerida, 
+        // y hay más aulas disponibles, intentar con otras aulas
+        if (course.requiredRoomId !== null && roomsToTry.length === 1 && this.rooms.length > 1) {
+            const otherRooms = this.rooms.filter(r => r.id !== course.requiredRoomId);
+
+            for (const room of otherRooms) {
+                for (let dayIndex = 0; dayIndex < DAYS_OF_WEEK.length; dayIndex++) {
+                    const maxHourIndex = course.requiresConsecutiveSlots ?
+                        (HOURS_PER_DAY - course.duration) :
+                        (HOURS_PER_DAY - 1);
+
+                    for (let hourIndex = 0; hourIndex <= maxHourIndex; hourIndex++) {
+                        const timeSlot = new TimeSlot(dayIndex, hourIndex);
+
+                        // Para clases no consecutivas, generar slots secundarios
+                        let secondaryTimeSlots = [];
+                        if (!course.requiresConsecutiveSlots && course.duration > 1) {
+                            secondaryTimeSlots = this.generateSecondaryTimeSlots(course, timeSlot);
+                        }
+
+                        const newAssignment = new ClassAssignment(course, room, timeSlot, secondaryTimeSlots);
+
+                        if (this.isValidAssignment(chromosome, newAssignment)) {
+                            return newAssignment;
+                        }
                     }
                 }
             }
@@ -482,27 +558,62 @@ class TimetableGenerator {
         // (esto podría crear un horario inválido, pero es mejor que un error)
         return assignment;
     }
+    isRoomRequirementSatisfied(assignment) {
+        if (assignment.course.requiredRoomId === null) {
+            return true; // No hay requisito específico de aula
+        }
+
+        return assignment.room.id === assignment.course.requiredRoomId;
+    }
+
+    // 6. Añadir método para verificar si una asignación es válida modificado
+    isValidAssignment(chromosome, assignment) {
+        // Implementación simple: comprobar si no hay conflictos
+        return chromosome.isRoomAvailableForAssignment(assignment) &&
+            chromosome.isProfessorAvailableForAssignment(assignment) &&
+            chromosome.areStudentGroupsAvailableForAssignment(assignment) &&
+            this.isRoomRequirementSatisfied(assignment); // Nueva verificación para aula específica
+    }
+
 
     // Operador de mutación
     mutate(chromosome) {
         // Elegir una asignación aleatoria para mutar
         const randomIndex = Math.floor(Math.random() * chromosome.classAssignments.length);
         const assignment = chromosome.classAssignments[randomIndex];
+        const course = assignment.course;
 
         // Determinar qué mutar (aula o horario)
-        const mutationType = Math.random() < 0.5 ? 'room' : 'timeSlot';
+        let mutationType;
 
-        if (mutationType === 'room') {
-            // Cambiar el aula
+        // Si el curso requiere un aula específica, solo mutamos el horario
+        if (course.requiredRoomId !== null) {
+            mutationType = 'timeSlot';
+        } else {
+            // Si no hay requisito específico, mutamos aleatoriamente aula o horario
+            mutationType = Math.random() < 0.5 ? 'room' : 'timeSlot';
+        }
+
+        if (mutationType === 'room' && !course.requiredRoomId) {
+            // Cambiar el aula solo si no hay requisito específico
             const randomRoomIndex = Math.floor(Math.random() * this.rooms.length);
             const newRoom = this.rooms[randomRoomIndex];
             assignment.room = newRoom;
         } else {
             // Cambiar el horario
-            const course = assignment.course;
             const randomDayIndex = Math.floor(Math.random() * DAYS_OF_WEEK.length);
-            const randomHourIndex = Math.floor(Math.random() * (HOURS_PER_DAY - course.duration + 1));
+            const maxHourIndex = course.requiresConsecutiveSlots ?
+                (HOURS_PER_DAY - course.duration) :
+                (HOURS_PER_DAY - 1);
+            const randomHourIndex = Math.floor(Math.random() * (maxHourIndex + 1));
             const newTimeSlot = new TimeSlot(randomDayIndex, randomHourIndex);
+
+            // Para clases no consecutivas, generar nuevos slots secundarios
+            if (!course.requiresConsecutiveSlots && course.duration > 1) {
+                const newSecondaryTimeSlots = this.generateSecondaryTimeSlots(course, newTimeSlot);
+                assignment.secondaryTimeSlots = newSecondaryTimeSlots;
+            }
+
             assignment.timeSlot = newTimeSlot;
         }
     }
@@ -532,6 +643,17 @@ class TimetableGenerator {
         }
 
         return secondarySlots;
+    }
+    addSpecificRoomConstraint() {
+        this.addHardConstraint(
+            (assignment) => {
+                if (assignment.course.requiredRoomId === null) {
+                    return true; // No hay requisito específico
+                }
+                return assignment.room.id === assignment.course.requiredRoomId;
+            },
+            "Asignar aulas específicas a cursos que las requieren"
+        );
     }
     addConsecutiveSlotsConstraint() {
         this.addSoftConstraint(
@@ -616,6 +738,7 @@ class TimetableGenerator {
             console.log("Guardado de archivo no disponible en este entorno (requiere Node.js). Copia la salida JSON de arriba.");
         }
     }
+    // 9. Modificar el método printTimetable para incluir información sobre aulas específicas
     addAssignmentToJSON(timetableJSON, assignment, slot, isContinuation) {
         const dayName = DAYS_OF_WEEK[slot.dayIndex];
         const hour = slot.hourIndex;
@@ -629,6 +752,8 @@ class TimetableGenerator {
             duration: assignment.course.duration,
             requiresComputers: assignment.course.requiresComputers,
             requiresConsecutiveSlots: assignment.course.requiresConsecutiveSlots,
+            requiredRoomId: assignment.course.requiredRoomId, // Añadir información de aula requerida
+            roomRequirementSatisfied: this.isRoomRequirementSatisfied(assignment), // Indicar si se cumple
             continuation: isContinuation,
             score: assignment.score
         };
@@ -644,7 +769,7 @@ class TimetableGenerator {
 
 // Ejemplo de uso
 function runExample() {
-    // Crear aulas
+    // Crear aulas, incluyendo las específicas para música y clases audio-visuales
     const rooms = [
         new Room("A101", 30, false),
         new Room("A102", 25, false),
@@ -668,7 +793,9 @@ function runExample() {
         new Room("LAB101", 25, true),
         new Room("LAB102", 30, true),
         new Room("LAB103", 35, true),
-        new Room("LAB104", 40, true) // Nueva aula con computadoras
+        new Room("LAB104", 40, true),
+        new Room("D217", 30, false), // Sala específica para música con teclados
+        new Room("D218", 35, false)  // Sala específica para clases audio-visuales
     ];
 
     // Crear profesores
@@ -696,11 +823,6 @@ function runExample() {
     professors[2].setAvailability(2, 3, false); // Dr. López no está disponible los miércoles a la cuarta hora
     professors[3].setAvailability(1, 7, false); // Dra. Martínez no está disponible los martes a la octava hora
     professors[4].setAvailability(3, 0, false); // Dr. Fernández no está disponible los jueves a primera hora
-    professors[5].setAvailability(0, 8, false); // Dra. Sánchez no está disponible los lunes a última hora
-    professors[6].setAvailability(4, 4, false); // Dr. González no está disponible los viernes a la quinta hora
-    professors[7].setAvailability(2, 6, false); // Dra. Pérez no está disponible los miércoles a la séptima hora
-    professors[8].setAvailability(3, 2, false); // Dr. Ramírez no está disponible los jueves a la tercera hora
-    professors[9].setAvailability(1, 1, false); // Dra. Torres no está disponible los martes a la segunda hora
 
     // Crear grupos de estudiantes
     const studentGroups = [
@@ -721,37 +843,51 @@ function runExample() {
         new StudentGroup("G15", "4º C", 18)
     ];
 
-    // Crear cursos con el nuevo parámetro requiresConsecutiveSlots
+    // Crear cursos con la nueva estructura que incluye requiredRoomId
     const courses = [
         // Cursos de 1º - algunos requieren slots consecutivos y otros no
-        new Course("C1", "Matemáticas I", professors[0], [studentGroups[0], studentGroups[1]], false, 2, true), // Slots consecutivos
-        new Course("C2", "Física I", professors[1], [studentGroups[0], studentGroups[2]], false, 2, false), // Slots NO consecutivos
-        new Course("C3", "Programación Básica", professors[2], [studentGroups[0], studentGroups[3]], true, 3, true), // Slots consecutivos
-        new Course("C4", "Introducción a Bases de Datos", professors[2], [studentGroups[1], studentGroups[2]], true, 2, false), // Slots NO consecutivos
+        new Course("C1", "Matemáticas I", professors[0], [studentGroups[0], studentGroups[1]], false, 2, true),
+        new Course("C2", "Física I", professors[1], [studentGroups[0], studentGroups[2]], false, 2, false),
+        new Course("C3", "Programación Básica", professors[2], [studentGroups[0], studentGroups[3]], true, 3, true),
+        new Course("C4", "Introducción a Bases de Datos", professors[2], [studentGroups[1], studentGroups[2]], true, 2, false),
         new Course("C5", "Inglés Técnico I", professors[3], [studentGroups[0], studentGroups[1], studentGroups[2]], false, 1, true),
         new Course("C6", "Historia de la Computación", professors[1], studentGroups[1], false, 1, true),
-        new Course("C7", "Álgebra Lineal", professors[0], [studentGroups[2], studentGroups[3]], false, 2, true), // Slots consecutivos
-        new Course("C8", "Introducción a Redes", professors[3], studentGroups[3], true, 2, false), // Slots NO consecutivos
+
+        // Curso de música que requiere la sala D217 con teclados
+        new Course("C7", "Música", professors[3], [studentGroups[2], studentGroups[3]], false, 2, true, "D217"),
+
+        new Course("C8", "Introducción a Redes", professors[3], studentGroups[3], true, 2, false),
         new Course("C9", "Expresión Oral y Escrita", professors[4], [studentGroups[0], studentGroups[1]], false, 1, true),
         new Course("C10", "Metodología de la Investigación", professors[5], studentGroups[2], false, 1, true),
-        new Course("C11", "Ética Profesional", professors[6], studentGroups[3], false, 1, true),
-        new Course("C12", "Lógica Matemática", professors[7], [studentGroups[0], studentGroups[3]], false, 2, true), // Slots consecutivos
+
+        // Curso de acústica que requiere la sala D218 audiovisual
+        new Course("C11", "Acústica", professors[4], studentGroups[3], false, 2, false, "D218"),
+
+        new Course("C12", "Lógica Matemática", professors[7], [studentGroups[0], studentGroups[3]], false, 2, true),
 
         // Cursos de 2º
-        new Course("C13", "Matemáticas II", professors[0], [studentGroups[4], studentGroups[5]], false, 2, true), // Slots consecutivos
-        new Course("C14", "Física II", professors[1], studentGroups[4], false, 2, false), // Slots NO consecutivos
-        new Course("C15", "Estructuras de Datos", professors[2], [studentGroups[4], studentGroups[7]], true, 2, true), // Slots consecutivos
-        new Course("C16", "Diseño de Bases de Datos", professors[8], [studentGroups[5], studentGroups[6]], true, 2, false), // Slots NO consecutivos
-        new Course("C17", "Inglés Técnico II", professors[3], [studentGroups[4], studentGroups[5], studentGroups[6]], false, 1, true),
-        new Course("C18", "Arquitectura de Computadoras", professors[9], studentGroups[6], false, 2, false), // Slots NO consecutivos
-        new Course("C19", "Estadística", professors[10], [studentGroups[5], studentGroups[7]], false, 2, true), // Slots consecutivos
-        new Course("C20", "Redes Avanzadas", professors[3], studentGroups[7], true, 2, false), // Slots NO consecutivos
+        new Course("C13", "Matemáticas II", professors[0], [studentGroups[4], studentGroups[5]], false, 2, true),
+        new Course("C14", "Física II", professors[1], studentGroups[4], false, 2, false),
+        new Course("C15", "Estructuras de Datos", professors[2], [studentGroups[4], studentGroups[7]], true, 2, true),
 
-        // Añadiendo sólo algunos cursos más para simplificar el ejemplo
-        new Course("C21", "Sistemas Operativos", professors[11], [studentGroups[4], studentGroups[7]], true, 2, true), // Slots consecutivos
-        new Course("C22", "Análisis de Algoritmos", professors[12], [studentGroups[5], studentGroups[6]], false, 2, false), // Slots NO consecutivos
-        new Course("C23", "Matemáticas Discretas", professors[10], studentGroups[4], false, 1, true),
-        new Course("C24", "Interfaces de Usuario", professors[13], studentGroups[6], true, 2, true) // Slots consecutivos
+        // Curso de piano que requiere la sala D217
+        new Course("C16", "Piano", professors[8], [studentGroups[5], studentGroups[6]], false, 2, true, "D217"),
+
+        new Course("C17", "Inglés Técnico II", professors[3], [studentGroups[4], studentGroups[5], studentGroups[6]], false, 1, true),
+        new Course("C18", "Arquitectura de Computadoras", professors[9], studentGroups[6], false, 2, false),
+        new Course("C19", "Estadística", professors[10], [studentGroups[5], studentGroups[7]], false, 2, true),
+
+        // Curso de producción audiovisual que requiere la sala D218
+        new Course("C20", "Producción Audiovisual", professors[9], studentGroups[7], false, 3, true, "D218"),
+
+        // Cursos de 3º
+        new Course("C21", "Sistemas Operativos", professors[11], [studentGroups[8], studentGroups[9]], true, 2, true),
+        new Course("C22", "Análisis de Algoritmos", professors[12], [studentGroups[8], studentGroups[10]], false, 2, false),
+
+        // Curso de composición musical que requiere D217
+        new Course("C23", "Composición Musical", professors[12], studentGroups[11], false, 2, true, "D217"),
+
+        new Course("C24", "Interfaces de Usuario", professors[13], studentGroups[9], true, 2, true)
     ];
 
     // Crear generador de horarios
@@ -759,14 +895,15 @@ function runExample() {
 
     // Configurar parámetros
     generator.populationSize = 200;
-    generator.maxGenerations = 1000; // Reducido para ejemplo
+    generator.maxGenerations = 1000;
     generator.mutationRate = 0.15;
     generator.elitismCount = 15;
 
-    // Añadir restricción para slots consecutivos/no consecutivos
+    // Añadir restricciones
     generator.addConsecutiveSlotsConstraint();
+    generator.addSpecificRoomConstraint(); // Añadir la nueva restricción de aula específica
 
-    // Añadir una restricción dura personalizada (no clases después de las 4 PM para el grupo 1º A)
+    // Añadir restricción dura personalizada (no clases después de las 4 PM para el grupo 1º A)
     generator.addHardConstraint(
         (assignment) => {
             if (assignment.course.studentGroups.some(g => g.id === "G1") && assignment.timeSlot.hourIndex >= 8) {
@@ -777,7 +914,7 @@ function runExample() {
         "No clases después de las 4 PM para el grupo 1º A"
     );
 
-    // Añadir una restricción blanda personalizada (preferir aulas con mayor capacidad)
+    // Añadir restricción blanda personalizada (preferir aulas con mayor capacidad)
     generator.addSoftConstraint(
         (assignment) => {
             const totalStudents = assignment.course.studentGroups.reduce((sum, group) => sum + group.size, 0);
@@ -869,6 +1006,32 @@ function runExample() {
 
     console.log(`  Cursos que requieren slots consecutivos: ${consecutiveRequiredFulfilled}/${consecutiveRequired} cumplidos (${((consecutiveRequiredFulfilled / consecutiveRequired) * 100).toFixed(2)}%)`);
     console.log(`  Cursos que requieren slots NO consecutivos: ${nonConsecutiveRequiredFulfilled}/${nonConsecutiveRequired} cumplidos (${((nonConsecutiveRequiredFulfilled / nonConsecutiveRequired) * 100).toFixed(2)}%)`);
+
+    // Análisis de requisitos de aula específica
+    console.log("\nAnálisis de requisitos de aula específica:");
+    let coursesWithSpecificRoom = 0;
+    let specificRoomRequirementsFulfilled = 0;
+
+    bestTimetable.classAssignments.forEach(assignment => {
+        if (assignment.course.requiredRoomId !== null) {
+            coursesWithSpecificRoom++;
+            if (assignment.room.id === assignment.course.requiredRoomId) {
+                specificRoomRequirementsFulfilled++;
+            }
+        }
+    });
+
+    console.log(`  Cursos con requisito de aula específica: ${specificRoomRequirementsFulfilled}/${coursesWithSpecificRoom} cumplidos (${((specificRoomRequirementsFulfilled / coursesWithSpecificRoom) * 100).toFixed(2)}%)`);
+
+    if (specificRoomRequirementsFulfilled < coursesWithSpecificRoom) {
+        console.log("\n  Detalles de cursos con requisitos de aula específica no cumplidos:");
+        bestTimetable.classAssignments.forEach(assignment => {
+            if (assignment.course.requiredRoomId !== null &&
+                assignment.room.id !== assignment.course.requiredRoomId) {
+                console.log(`    - Curso "${assignment.course.name}" (requiere aula ${assignment.course.requiredRoomId}) asignado a ${assignment.room.id}`);
+            }
+        });
+    }
 
     // Imprimir horario
     generator.printTimetable(bestTimetable);

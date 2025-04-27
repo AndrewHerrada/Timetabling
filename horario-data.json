@@ -1,530 +1,666 @@
 {
   "Lunes": {
-    "0": [
-      {
-        "course": "Matemáticas I",
-        "professor": "Dr. García",
-        "room": "B203",
-        "groups": "1º A, 1º B",
-        "duration": 2,
-        "requiresComputers": false,
-        "requiresConsecutiveSlots": true,
-        "continuation": false,
-        "score": 3
-      },
-      {
-        "course": "Programación Básica",
-        "professor": "Dr. López",
-        "room": "LAB104",
-        "groups": "1º A, 1º D",
-        "duration": 3,
-        "requiresComputers": true,
-        "requiresConsecutiveSlots": true,
-        "continuation": false,
-        "score": 4
-      }
-    ],
+    "0": [],
     "1": [
       {
-        "course": "Matemáticas I",
-        "professor": "Dr. García",
-        "room": "B203",
-        "groups": "1º A, 1º B",
-        "duration": 2,
-        "requiresComputers": false,
-        "requiresConsecutiveSlots": true,
-        "continuation": true,
-        "score": 3
-      },
-      {
-        "course": "Programación Básica",
+        "course": "Introducción a Bases de Datos",
         "professor": "Dr. López",
-        "room": "LAB104",
-        "groups": "1º A, 1º D",
-        "duration": 3,
-        "requiresComputers": true,
-        "requiresConsecutiveSlots": true,
-        "continuation": true,
-        "score": 4
-      },
-      {
-        "course": "Inglés Técnico I",
-        "professor": "Dra. Martínez",
-        "room": "LAB101",
-        "groups": "1º A, 1º B, 1º C",
-        "duration": 1,
-        "requiresComputers": false,
-        "requiresConsecutiveSlots": true,
-        "continuation": false,
-        "score": 4
-      },
-      {
-        "course": "Álgebra Lineal",
-        "professor": "Dr. García",
-        "room": "A107",
-        "groups": "1º C, 1º D",
-        "duration": 2,
-        "requiresComputers": false,
-        "requiresConsecutiveSlots": true,
-        "continuation": false,
-        "score": 4
-      },
-      {
-        "course": "Estadística",
-        "professor": "Dr. Díaz",
-        "room": "A101",
-        "groups": "2º B, 2º D",
-        "duration": 2,
-        "requiresComputers": false,
-        "requiresConsecutiveSlots": true,
-        "continuation": false,
-        "score": 4
-      }
-    ],
-    "2": [
-      {
-        "course": "Programación Básica",
-        "professor": "Dr. López",
-        "room": "LAB104",
-        "groups": "1º A, 1º D",
-        "duration": 3,
-        "requiresComputers": true,
-        "requiresConsecutiveSlots": true,
-        "continuation": true,
-        "score": 4
-      },
-      {
-        "course": "Álgebra Lineal",
-        "professor": "Dr. García",
-        "room": "A107",
-        "groups": "1º C, 1º D",
-        "duration": 2,
-        "requiresComputers": false,
-        "requiresConsecutiveSlots": true,
-        "continuation": true,
-        "score": 4
-      },
-      {
-        "course": "Estadística",
-        "professor": "Dr. Díaz",
-        "room": "A101",
-        "groups": "2º B, 2º D",
-        "duration": 2,
-        "requiresComputers": false,
-        "requiresConsecutiveSlots": true,
-        "continuation": true,
-        "score": 4
-      }
-    ],
-    "3": [
-      {
-        "course": "Lógica Matemática",
-        "professor": "Dra. Pérez",
-        "room": "A101",
-        "groups": "1º A, 1º D",
-        "duration": 2,
-        "requiresComputers": false,
-        "requiresConsecutiveSlots": true,
-        "continuation": false,
-        "score": 4
-      }
-    ],
-    "4": [
-      {
-        "course": "Lógica Matemática",
-        "professor": "Dra. Pérez",
-        "room": "A101",
-        "groups": "1º A, 1º D",
-        "duration": 2,
-        "requiresComputers": false,
-        "requiresConsecutiveSlots": true,
-        "continuation": true,
-        "score": 4
-      },
-      {
-        "course": "Estructuras de Datos",
-        "professor": "Dr. López",
-        "room": "A101",
-        "groups": "2º A, 2º D",
-        "duration": 2,
-        "requiresComputers": true,
-        "requiresConsecutiveSlots": true,
-        "continuation": false,
-        "score": 3
-      },
-      {
-        "course": "Redes Avanzadas",
-        "professor": "Dra. Martínez",
-        "room": "A104",
-        "groups": "2º D",
+        "room": "B204",
+        "groups": "1º B, 1º C",
         "duration": 2,
         "requiresComputers": true,
         "requiresConsecutiveSlots": false,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
         "continuation": false,
-        "score": 3
-      }
-    ],
-    "5": [
-      {
-        "course": "Estructuras de Datos",
-        "professor": "Dr. López",
-        "room": "A101",
-        "groups": "2º A, 2º D",
-        "duration": 2,
-        "requiresComputers": true,
-        "requiresConsecutiveSlots": true,
-        "continuation": true,
-        "score": 3
-      }
-    ],
-    "6": [
-      {
-        "course": "Análisis de Algoritmos",
-        "professor": "Dr. Morales",
-        "room": "A101",
-        "groups": "2º B, 2º C",
-        "duration": 2,
-        "requiresComputers": false,
-        "requiresConsecutiveSlots": false,
-        "continuation": false,
-        "score": 3.5
-      }
-    ],
-    "7": [
+        "score": 4
+      },
       {
         "course": "Introducción a Redes",
         "professor": "Dra. Martínez",
-        "room": "B206",
+        "room": "B201",
         "groups": "1º D",
         "duration": 2,
         "requiresComputers": true,
         "requiresConsecutiveSlots": false,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
         "continuation": false,
         "score": 5
-      }
-    ],
-    "8": [
+      },
       {
         "course": "Metodología de la Investigación",
         "professor": "Dra. Sánchez",
-        "room": "C302",
+        "room": "A101",
         "groups": "1º C",
         "duration": 1,
         "requiresComputers": false,
         "requiresConsecutiveSlots": true,
-        "continuation": false,
-        "score": 3
-      }
-    ]
-  },
-  "Martes": {
-    "0": [
-      {
-        "course": "Arquitectura de Computadoras",
-        "professor": "Dra. Torres",
-        "room": "LAB101",
-        "groups": "2º C",
-        "duration": 2,
-        "requiresComputers": false,
-        "requiresConsecutiveSlots": false,
-        "continuation": false,
-        "score": 4
-      }
-    ],
-    "1": [],
-    "2": [
-      {
-        "course": "Introducción a Redes",
-        "professor": "Dra. Martínez",
-        "room": "B206",
-        "groups": "1º D",
-        "duration": 2,
-        "requiresComputers": true,
-        "requiresConsecutiveSlots": false,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
         "continuation": false,
         "score": 5
       },
       {
         "course": "Arquitectura de Computadoras",
         "professor": "Dra. Torres",
-        "room": "LAB101",
+        "room": "A107",
         "groups": "2º C",
         "duration": 2,
         "requiresComputers": false,
         "requiresConsecutiveSlots": false,
-        "continuation": false,
-        "score": 4
-      }
-    ],
-    "3": [],
-    "4": [
-      {
-        "course": "Introducción a Bases de Datos",
-        "professor": "Dr. López",
-        "room": "A101",
-        "groups": "1º B, 1º C",
-        "duration": 2,
-        "requiresComputers": true,
-        "requiresConsecutiveSlots": false,
-        "continuation": false,
-        "score": 2
-      }
-    ],
-    "5": [],
-    "6": [],
-    "7": [
-      {
-        "course": "Inglés Técnico II",
-        "professor": "Dra. Martínez",
-        "room": "LAB104",
-        "groups": "2º A, 2º B, 2º C",
-        "duration": 1,
-        "requiresComputers": false,
-        "requiresConsecutiveSlots": true,
-        "continuation": false,
-        "score": 2
-      },
-      {
-        "course": "Redes Avanzadas",
-        "professor": "Dra. Martínez",
-        "room": "A104",
-        "groups": "2º D",
-        "duration": 2,
-        "requiresComputers": true,
-        "requiresConsecutiveSlots": false,
-        "continuation": false,
-        "score": 3
-      }
-    ],
-    "8": [
-      {
-        "course": "Diseño de Bases de Datos",
-        "professor": "Dr. Ramírez",
-        "room": "A105",
-        "groups": "2º B, 2º C",
-        "duration": 2,
-        "requiresComputers": true,
-        "requiresConsecutiveSlots": false,
-        "continuation": false,
-        "score": 2
-      }
-    ]
-  },
-  "Miércoles": {
-    "0": [
-      {
-        "course": "Interfaces de Usuario",
-        "professor": "Dra. Jiménez",
-        "room": "C301",
-        "groups": "2º C",
-        "duration": 2,
-        "requiresComputers": true,
-        "requiresConsecutiveSlots": true,
-        "continuation": false,
-        "score": 4
-      }
-    ],
-    "1": [
-      {
-        "course": "Sistemas Operativos",
-        "professor": "Dra. Ruiz",
-        "room": "A104",
-        "groups": "2º A, 2º D",
-        "duration": 2,
-        "requiresComputers": true,
-        "requiresConsecutiveSlots": true,
-        "continuation": false,
-        "score": 3
-      },
-      {
-        "course": "Matemáticas Discretas",
-        "professor": "Dr. Díaz",
-        "room": "A105",
-        "groups": "2º A",
-        "duration": 1,
-        "requiresComputers": false,
-        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
         "continuation": false,
         "score": 5
-      },
-      {
-        "course": "Interfaces de Usuario",
-        "professor": "Dra. Jiménez",
-        "room": "C301",
-        "groups": "2º C",
-        "duration": 2,
-        "requiresComputers": true,
-        "requiresConsecutiveSlots": true,
-        "continuation": true,
-        "score": 4
       }
     ],
-    "2": [
-      {
-        "course": "Matemáticas II",
-        "professor": "Dr. García",
-        "room": "C305",
-        "groups": "2º A, 2º B",
-        "duration": 2,
-        "requiresComputers": false,
-        "requiresConsecutiveSlots": true,
-        "continuation": false,
-        "score": 4
-      },
-      {
-        "course": "Sistemas Operativos",
-        "professor": "Dra. Ruiz",
-        "room": "A104",
-        "groups": "2º A, 2º D",
-        "duration": 2,
-        "requiresComputers": true,
-        "requiresConsecutiveSlots": true,
-        "continuation": true,
-        "score": 3
-      }
-    ],
+    "2": [],
     "3": [
-      {
-        "course": "Introducción a Bases de Datos",
-        "professor": "Dr. López",
-        "room": "A101",
-        "groups": "1º B, 1º C",
-        "duration": 2,
-        "requiresComputers": true,
-        "requiresConsecutiveSlots": false,
-        "continuation": false,
-        "score": 2
-      },
-      {
-        "course": "Matemáticas II",
-        "professor": "Dr. García",
-        "room": "C305",
-        "groups": "2º A, 2º B",
-        "duration": 2,
-        "requiresComputers": false,
-        "requiresConsecutiveSlots": true,
-        "continuation": true,
-        "score": 4
-      }
-    ],
-    "4": [],
-    "5": [],
-    "6": [],
-    "7": [],
-    "8": []
-  },
-  "Jueves": {
-    "0": [
-      {
-        "course": "Expresión Oral y Escrita",
-        "professor": "Dr. Fernández",
-        "room": "A101",
-        "groups": "1º A, 1º B",
-        "duration": 1,
-        "requiresComputers": false,
-        "requiresConsecutiveSlots": true,
-        "continuation": false,
-        "score": 2
-      }
-    ],
-    "1": [
-      {
-        "course": "Diseño de Bases de Datos",
-        "professor": "Dr. Ramírez",
-        "room": "A105",
-        "groups": "2º B, 2º C",
-        "duration": 2,
-        "requiresComputers": true,
-        "requiresConsecutiveSlots": false,
-        "continuation": false,
-        "score": 2
-      }
-    ],
-    "2": [],
-    "3": [],
-    "4": [],
-    "5": [],
-    "6": [
-      {
-        "course": "Física I",
-        "professor": "Dra. Rodríguez",
-        "room": "C303",
-        "groups": "1º A, 1º C",
-        "duration": 2,
-        "requiresComputers": false,
-        "requiresConsecutiveSlots": false,
-        "continuation": false,
-        "score": 3
-      }
-    ],
-    "7": [],
-    "8": []
-  },
-  "Viernes": {
-    "0": [],
-    "1": [],
-    "2": [],
-    "3": [],
-    "4": [
       {
         "course": "Historia de la Computación",
         "professor": "Dra. Rodríguez",
-        "room": "A108",
+        "room": "D217",
         "groups": "1º B",
         "duration": 1,
         "requiresComputers": false,
         "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
         "continuation": false,
         "score": 5
       },
       {
-        "course": "Ética Profesional",
-        "professor": "Dr. González",
-        "room": "A101",
-        "groups": "1º D",
+        "course": "Expresión Oral y Escrita",
+        "professor": "Dr. Fernández",
+        "room": "B206",
+        "groups": "1º A, 1º B",
         "duration": 1,
         "requiresComputers": false,
         "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 5
+      },
+      {
+        "course": "Análisis de Algoritmos",
+        "professor": "Dr. Morales",
+        "room": "A101",
+        "groups": "3º A, 3º C",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": false,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 4
+      }
+    ],
+    "4": [],
+    "5": [
+      {
+        "course": "Lógica Matemática",
+        "professor": "Dra. Pérez",
+        "room": "B204",
+        "groups": "1º A, 1º D",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 4
+      },
+      {
+        "course": "Inglés Técnico II",
+        "professor": "Dra. Martínez",
+        "room": "A101",
+        "groups": "2º A, 2º B, 2º C",
+        "duration": 1,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 4
+      }
+    ],
+    "6": [
+      {
+        "course": "Lógica Matemática",
+        "professor": "Dra. Pérez",
+        "room": "B204",
+        "groups": "1º A, 1º D",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": true,
+        "score": 4
+      }
+    ],
+    "7": [
+      {
+        "course": "Música",
+        "professor": "Dra. Martínez",
+        "room": "D217",
+        "groups": "1º C, 1º D",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": "D217",
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 5
+      },
+      {
+        "course": "Análisis de Algoritmos",
+        "professor": "Dr. Morales",
+        "room": "A101",
+        "groups": "3º A, 3º C",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": false,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 4
+      }
+    ],
+    "8": [
+      {
+        "course": "Música",
+        "professor": "Dra. Martínez",
+        "room": "D217",
+        "groups": "1º C, 1º D",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": "D217",
+        "roomRequirementSatisfied": true,
+        "continuation": true,
+        "score": 5
+      },
+      {
+        "course": "Acústica",
+        "professor": "Dr. Fernández",
+        "room": "D218",
+        "groups": "1º D",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": false,
+        "requiredRoomId": "D218",
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 6
+      }
+    ]
+  },
+  "Martes": {
+    "0": [],
+    "1": [
+      {
+        "course": "Física II",
+        "professor": "Dra. Rodríguez",
+        "room": "A107",
+        "groups": "2º A",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": false,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 5
+      },
+      {
+        "course": "Piano",
+        "professor": "Dr. Ramírez",
+        "room": "D217",
+        "groups": "2º B, 2º C",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": "D217",
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 5
+      }
+    ],
+    "2": [
+      {
+        "course": "Piano",
+        "professor": "Dr. Ramírez",
+        "room": "D217",
+        "groups": "2º B, 2º C",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": "D217",
+        "roomRequirementSatisfied": true,
+        "continuation": true,
+        "score": 5
+      }
+    ],
+    "3": [
+      {
+        "course": "Acústica",
+        "professor": "Dr. Fernández",
+        "room": "D218",
+        "groups": "1º D",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": false,
+        "requiredRoomId": "D218",
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 6
+      }
+    ],
+    "4": [],
+    "5": [
+      {
+        "course": "Introducción a Bases de Datos",
+        "professor": "Dr. López",
+        "room": "B204",
+        "groups": "1º B, 1º C",
+        "duration": 2,
+        "requiresComputers": true,
+        "requiresConsecutiveSlots": false,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 4
+      },
+      {
+        "course": "Interfaces de Usuario",
+        "professor": "Dra. Jiménez",
+        "room": "A106",
+        "groups": "3º B",
+        "duration": 2,
+        "requiresComputers": true,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 4
+      }
+    ],
+    "6": [
+      {
+        "course": "Interfaces de Usuario",
+        "professor": "Dra. Jiménez",
+        "room": "A106",
+        "groups": "3º B",
+        "duration": 2,
+        "requiresComputers": true,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": true,
+        "score": 4
+      }
+    ],
+    "7": [],
+    "8": []
+  },
+  "Miércoles": {
+    "0": [],
+    "1": [],
+    "2": [
+      {
+        "course": "Programación Básica",
+        "professor": "Dr. López",
+        "room": "LAB101",
+        "groups": "1º A, 1º D",
+        "duration": 3,
+        "requiresComputers": true,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 2
+      }
+    ],
+    "3": [
+      {
+        "course": "Programación Básica",
+        "professor": "Dr. López",
+        "room": "LAB101",
+        "groups": "1º A, 1º D",
+        "duration": 3,
+        "requiresComputers": true,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": true,
+        "score": 2
+      },
+      {
+        "course": "Estructuras de Datos",
+        "professor": "Dr. López",
+        "room": "B202",
+        "groups": "2º A, 2º D",
+        "duration": 2,
+        "requiresComputers": true,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 3
+      }
+    ],
+    "4": [
+      {
+        "course": "Programación Básica",
+        "professor": "Dr. López",
+        "room": "LAB101",
+        "groups": "1º A, 1º D",
+        "duration": 3,
+        "requiresComputers": true,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": true,
+        "score": 2
+      },
+      {
+        "course": "Estructuras de Datos",
+        "professor": "Dr. López",
+        "room": "B202",
+        "groups": "2º A, 2º D",
+        "duration": 2,
+        "requiresComputers": true,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": true,
+        "score": 3
+      },
+      {
+        "course": "Arquitectura de Computadoras",
+        "professor": "Dra. Torres",
+        "room": "A107",
+        "groups": "2º C",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": false,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 5
+      }
+    ],
+    "5": [],
+    "6": [
+      {
+        "course": "Producción Audiovisual",
+        "professor": "Dra. Torres",
+        "room": "D218",
+        "groups": "2º D",
+        "duration": 3,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": "D218",
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 6
+      }
+    ],
+    "7": [
+      {
+        "course": "Producción Audiovisual",
+        "professor": "Dra. Torres",
+        "room": "D218",
+        "groups": "2º D",
+        "duration": 3,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": "D218",
+        "roomRequirementSatisfied": true,
+        "continuation": true,
+        "score": 6
+      },
+      {
+        "course": "Sistemas Operativos",
+        "professor": "Dra. Ruiz",
+        "room": "B206",
+        "groups": "3º A, 3º B",
+        "duration": 2,
+        "requiresComputers": true,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 4
+      }
+    ],
+    "8": [
+      {
+        "course": "Inglés Técnico I",
+        "professor": "Dra. Martínez",
+        "room": "C304",
+        "groups": "1º A, 1º B, 1º C",
+        "duration": 1,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 4
+      },
+      {
+        "course": "Producción Audiovisual",
+        "professor": "Dra. Torres",
+        "room": "D218",
+        "groups": "2º D",
+        "duration": 3,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": "D218",
+        "roomRequirementSatisfied": true,
+        "continuation": true,
+        "score": 6
+      },
+      {
+        "course": "Sistemas Operativos",
+        "professor": "Dra. Ruiz",
+        "room": "B206",
+        "groups": "3º A, 3º B",
+        "duration": 2,
+        "requiresComputers": true,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": true,
+        "score": 4
+      }
+    ]
+  },
+  "Jueves": {
+    "0": [],
+    "1": [],
+    "2": [],
+    "3": [],
+    "4": [],
+    "5": [],
+    "6": [],
+    "7": [
+      {
+        "course": "Estadística",
+        "professor": "Dr. Díaz",
+        "room": "D217",
+        "groups": "2º B, 2º D",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 4
+      }
+    ],
+    "8": [
+      {
+        "course": "Física I",
+        "professor": "Dra. Rodríguez",
+        "room": "LAB101",
+        "groups": "1º A, 1º C",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": false,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 4
+      },
+      {
+        "course": "Estadística",
+        "professor": "Dr. Díaz",
+        "room": "D217",
+        "groups": "2º B, 2º D",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": true,
+        "score": 4
+      }
+    ]
+  },
+  "Viernes": {
+    "0": [
+      {
+        "course": "Física II",
+        "professor": "Dra. Rodríguez",
+        "room": "A107",
+        "groups": "2º A",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": false,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 5
+      }
+    ],
+    "1": [
+      {
+        "course": "Matemáticas I",
+        "professor": "Dr. García",
+        "room": "LAB102",
+        "groups": "1º A, 1º B",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 4
+      }
+    ],
+    "2": [
+      {
+        "course": "Matemáticas I",
+        "professor": "Dr. García",
+        "room": "LAB102",
+        "groups": "1º A, 1º B",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": true,
+        "score": 4
+      }
+    ],
+    "3": [],
+    "4": [
+      {
+        "course": "Introducción a Redes",
+        "professor": "Dra. Martínez",
+        "room": "B201",
+        "groups": "1º D",
+        "duration": 2,
+        "requiresComputers": true,
+        "requiresConsecutiveSlots": false,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 5
+      },
+      {
+        "course": "Matemáticas II",
+        "professor": "Dr. García",
+        "room": "LAB103",
+        "groups": "2º A, 2º B",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
         "continuation": false,
         "score": 4
       }
     ],
     "5": [
       {
-        "course": "Física II",
-        "professor": "Dra. Rodríguez",
-        "room": "A107",
-        "groups": "2º A",
+        "course": "Matemáticas II",
+        "professor": "Dr. García",
+        "room": "LAB103",
+        "groups": "2º A, 2º B",
         "duration": 2,
         "requiresComputers": false,
-        "requiresConsecutiveSlots": false,
-        "continuation": false,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
+        "continuation": true,
         "score": 4
       }
     ],
-    "6": [],
+    "6": [
+      {
+        "course": "Composición Musical",
+        "professor": "Dr. Morales",
+        "room": "D217",
+        "groups": "3º D",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": "D217",
+        "roomRequirementSatisfied": true,
+        "continuation": false,
+        "score": 6
+      }
+    ],
     "7": [
       {
         "course": "Física I",
         "professor": "Dra. Rodríguez",
-        "room": "C303",
+        "room": "LAB101",
         "groups": "1º A, 1º C",
         "duration": 2,
         "requiresComputers": false,
         "requiresConsecutiveSlots": false,
-        "continuation": false,
-        "score": 3
-      },
-      {
-        "course": "Física II",
-        "professor": "Dra. Rodríguez",
-        "room": "A107",
-        "groups": "2º A",
-        "duration": 2,
-        "requiresComputers": false,
-        "requiresConsecutiveSlots": false,
+        "requiredRoomId": null,
+        "roomRequirementSatisfied": true,
         "continuation": false,
         "score": 4
+      },
+      {
+        "course": "Composición Musical",
+        "professor": "Dr. Morales",
+        "room": "D217",
+        "groups": "3º D",
+        "duration": 2,
+        "requiresComputers": false,
+        "requiresConsecutiveSlots": true,
+        "requiredRoomId": "D217",
+        "roomRequirementSatisfied": true,
+        "continuation": true,
+        "score": 6
       }
     ],
     "8": []

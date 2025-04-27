@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Análisis del Algoritmo Genético de Timetabling</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/papaparse/5.3.2/papaparse.min.js"></script>
+    <style>
+        /* --- ESTILOS CSS --- */
+        :root {
+            /* Variables de color CSS (esto sí va aquí) */
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --accent-color: #e74c3c;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --text-color: #333;
+            --grid-color: rgba(0, 0, 0, 0.1);
+        }
+
+        /* Resto de tus estilos (sin cambios, excepto quitar el JS de :root) */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: var(--dark-color);
+            color: white;
+            border-radius: 5px;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 22px;
+            margin: 15px 0;
+            color: var(--dark-color);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button.active {
+            background-color: var(--secondary-color);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 5px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-input-label {
+            padding: 10px 15px;
+            background-color: var(--accent-color);
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .file-input-label:hover {
+            background-color: #c0392b;
+        }
+
+        #fileInfo {
+            font-size: 14px;
+            margin-left: 10px;
+            font-style: italic;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        .statistic {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 10px 0;
+        }
+
+        .stat-title {
+            font-size: 14px;
+            color: var(--dark-color);
+        }
+
+        .stat-color-1 .stat-value {
+            color: var(--primary-color);
+        }
+
+        .stat-color-2 .stat-value {
+            color: var(--secondary-color);
+        }
+
+        .stat-color-3 .stat-value {
+            color: var(--accent-color);
+        }
+
+        .stat-color-4 .stat-value {
+            color: #9b59b6;
+        }
+
+        .help-text {
+            font-size: 14px;
+            margin-top: 10px;
+            color: #777;
+        }
+
+        #notDataMessage {
+            text-align: center;
+            padding: 40px;
+            background-color: white;
+            border-radius: 8px;
+            margin: 50px auto;
+            max-width: 500px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .constraint-analysis {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .constraint-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 10px 0;
+            /* Ajuste padding */
+            border-bottom: 1px solid var(--grid-color);
+            flex-wrap: wrap;
+            /* Para mejor responsividad */
+        }
+
+        .constraint-details {
+            /* Contenedor para nombre, valor, % */
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+
+        .constraint-name {
+            flex-basis: 50%;
+            /* Ajustar base */
+        }
+
+        .constraint-value {
+            flex-basis: 25%;
+            /* Ajustar base */
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .constraint-percentage {
+            flex-basis: 20%;
+            /* Ajustar base */
+            text-align: right;
+        }
+
+        .constraint-bar-container {
+            /* Contenedor para la barra */
+            width: 100%;
+        }
+
+        .constraint-bar {
+            height: 12px;
+            background-color: #eee;
+            border-radius: 6px;
+            /* margin-top: 5px; */
+            /* Quitado, controlado por container */
+            overflow: hidden;
+        }
+
+        .constraint-bar-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 6px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--grid-color);
+        }
+
+        th {
+            background-color: var(--dark-color);
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        .room-satisfaction-high {
+            color: var(--secondary-color);
+            font-weight: bold;
+        }
+
+        .room-satisfaction-low {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .message {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .message.success {
+            background-color: #e8f5e9;
+            border-left-color: var(--secondary-color);
+        }
+
+        .message.warning {
+            background-color: #fff8e1;
+            border-left-color: #ffc107;
+        }
+
+        .message.error {
+            background-color: #ffebee;
+            border-left-color: var(--accent-color);
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .constraint-details {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .constraint-name,
+            .constraint-value,
+            .constraint-percentage {
+                flex-basis: auto;
+                text-align: left;
+                width: 100%;
+            }
+
+            .constraint-value,
+            .constraint-percentage {
+                margin-top: 3px;
+            }
+
+        }
+
+        /* Mejoras de accesibilidad */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard">
+        <header>
+            <h1>Dashboard de Análisis de Timetabling</h1>
+            <p>Visualizaciones estadísticas del algoritmo genético de generación de horarios</p>
+        </header>
+
+        <div class="controls">
+            <div class="button-group">
+                <label class="file-input-label" for="logFile">
+                    Cargar Log / JSON
+                </label>
+                <input type="file" id="logFile" accept=".txt,.log,.json">
+                <span id="fileInfo">Ningún archivo cargado</span>
+            </div>
+
+            <div class="button-group">
+                <button id="generateSampleBtn">Generar Datos de Muestra</button>
+            </div>
+        </div>
+
+        <div id="dashboardContent" style="display: none;">
+            <div class="statistic">
+                <div class="stat-box stat-color-1">
+                    <div class="stat-title">Mejor Fitness Alcanzado</div>
+                    <div class="stat-value" id="bestFitness">0.00</div>
+                </div>
+                <div class="stat-box stat-color-2">
+                    <div class="stat-title">Generaciones Totales</div>
+                    <div class="stat-value" id="totalGenerations">0</div>
+                </div>
+                <div class="stat-box stat-color-3">
+                    <div class="stat-title">Tiempo de Ejecución</div>
+                    <div class="stat-value" id="executionTime">0.0s</div>
+                </div>
+                <div class="stat-box stat-color-4">
+                    <div class="stat-title">Restricciones Satisfechas</div>
+                    <div class="stat-value" id="constraintsSatisfied">0%</div>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <h2>Evolución del Fitness</h2>
+                    <div class="chart-container">
+                        <canvas id="fitnessChart"></canvas>
+                    </div>
+                    <p class="help-text">Muestra cómo mejora el fitness a través de las generaciones del algoritmo
+                        genético.</p>
+                </div>
+
+                <div class="card">
+                    <h2>Distribución de Puntuaciones (Duras)</h2>
+                    <div class="chart-container">
+                        <canvas id="scoreDistributionChart"></canvas>
+                    </div>
+                    <p class="help-text">Número de asignaciones por cada nivel de puntuación (0-5 puntos).</p>
+                </div>
+            </div>
+
+            <div class="constraint-analysis">
+                <h2>Análisis de Restricciones</h2>
+                <div id="constraintsList">
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <h2>Restricciones de Aulas Específicas</h2>
+                    <div class="chart-container">
+                        <canvas id="roomRequirementsChart"></canvas>
+                    </div>
+                    <p class="help-text">Muestra cuántos cursos cumplen con sus requisitos de aula específica.</p>
+                </div>
+
+                <div class="card">
+                    <h2>Slots Consecutivos vs No Consecutivos</h2>
+                    <div class="chart-container">
+                        <canvas id="slotsChart"></canvas>
+                    </div>
+                    <p class="help-text">Comparación entre requisitos de slots consecutivos y no consecutivos
+                        satisfechos.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Asignaciones por Aula</h2>
+                <div class="chart-container">
+                    <canvas id="roomAssignmentChart"></canvas>
+                </div>
+                <p class="help-text">Distribución de asignaciones en cada aula, mostrando su utilización.</p>
+            </div>
+
+            <div class="card">
+                <h2>Detalle de Aulas Específicas (Muestra)</h2>
+                <table id="specificRoomsTable">
+                    <thead>
+                        <tr>
+                            <th>Curso</th>
+                            <th>Aula Requerida</th>
+                            <th>Aula Asignada</th>
+                            <th>¿Requisito Cumplido?</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+                <p class="help-text">Muestra si los cursos con requisito de aula específica la obtuvieron (basado en
+                    datos disponibles en el log/JSON o muestra).</p>
+            </div>
+        </div>
+
+        <div id="notDataMessage">
+            <h2>No hay datos para visualizar</h2>
+            <p>Por favor, carga un archivo de log (.txt, .log) o un JSON de horario, o genera datos de muestra para ver
+                las estadísticas.</p>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales para los gráficos
+        let fitnessChart, scoreDistributionChart, roomRequirementsChart, slotsChart, roomAssignmentChart;
+
+        // --- Código movido desde <style> ---
+
+        // Inicializar los eventos cuando el DOM esté cargado
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // Escuchar eventos de los botones
+            document.getElementById('generateSampleBtn').addEventListener('click', function () {
+                const sampleData = generateSampleData(); // Llama a la función que genera datos
+                document.getElementById('notDataMessage').style.display = 'none';
+                document.getElementById('dashboardContent').style.display = 'block';
+                updateCharts(sampleData); // Actualiza los gráficos con los datos generados
+            });
+
+            // Manejar carga de archivo
+            document.getElementById('logFile').addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                document.getElementById('fileInfo').textContent = `Archivo: ${file.name}`; // Mostrar nombre archivo
+
+                const reader = new FileReader();
+
+                reader.onload = function (event) {
+                    try {
+                        let content = event.target.result;
+                        let data; // Variable para guardar los datos procesados
+
+                        // Intentar parsear como JSON primero (asumiendo estructura de horario-data.json)
+                        try {
+                            const jsonData = JSON.parse(content);
+                            console.log("Archivo detectado como JSON.");
+                            data = processTimetableData(jsonData); // Procesar datos del JSON de horario
+                        } catch (jsonError) {
+                            // Si no es JSON, asumimos que es un archivo de log de texto
+                            console.log("Archivo no es JSON, intentando procesar como Log de texto.");
+                            data = processLogFile(content); // Procesar datos del log
+                        }
+
+                        if (data) {
+                            document.getElementById('notDataMessage').style.display = 'none';
+                            document.getElementById('dashboardContent').style.display = 'block';
+                            updateCharts(data); // Actualizar gráficos con datos del archivo
+                        } else {
+                            throw new Error("No se pudieron procesar los datos del archivo.");
+                        }
+
+                    } catch (error) {
+                        console.error('Error al procesar el archivo:', error);
+                        alert(`Error al procesar el archivo: ${error.message}. Asegúrese de que sea un archivo de log o JSON de horario válido.`);
+                        // Ocultar contenido y mostrar mensaje de no datos si hay error
+                        document.getElementById('notDataMessage').style.display = 'block';
+                        document.getElementById('dashboardContent').style.display = 'none';
+                        document.getElementById('fileInfo').textContent = 'Error al cargar.';
+
+                    }
+                }; // Fin reader.onload
+
+                reader.onerror = function () {
+                    alert('Error al leer el archivo.');
+                    document.getElementById('fileInfo').textContent = 'Error de lectura.';
+                };
+
+                reader.readAsText(file); // Leer archivo como texto
+            }); // Fin eventListener change
+        }); // Fin DOMContentLoaded
+
+
+        // Procesar un archivo de log de texto (Extraer datos usando Regex)
+        function processLogFile(content) {
+            console.log("Procesando archivo de Log...");
+            const data = {};
+
+            // Extraer datos relevantes del log con Regex
+            const fitnessData = [];
+            const fitnessRegex = /Generación (\d+): Mejor fitness ?= ?([\d.]+)/g; // Más flexible con espacios
+            let match;
+
+            while ((match = fitnessRegex.exec(content)) !== null) {
+                fitnessData.push({
+                    generation: parseInt(match[1]),
+                    fitness: parseFloat(match[2])
+                });
+            }
+            data.fitnessData = fitnessData;
+            data.totalGenerations = fitnessData.length > 0 ? fitnessData[fitnessData.length - 1].generation : 0;
+
+
+            const bestFitnessMatch = content.match(/Mejor fitness alcanzado: ([\d.]+)/);
+            data.bestFitness = bestFitnessMatch ? bestFitnessMatch[1] : (fitnessData.length > 0 ? fitnessData[fitnessData.length - 1].fitness.toFixed(4) : "N/A");
+
+
+            const executionTimeMatch = content.match(/Tiempo de ejecución: ([\d.]+) segundos/);
+            data.executionTime = executionTimeMatch ? executionTimeMatch[1] : "N/A";
+
+
+            const scoreDistribution = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+            const scoreRegex = /Asignaciones con puntuación (\d+): (\d+)/g;
+            while ((match = scoreRegex.exec(content)) !== null) {
+                if (scoreDistribution.hasOwnProperty(match[1])) {
+                    scoreDistribution[match[1]] = parseInt(match[2]);
+                }
+            }
+            data.scoreDistribution = scoreDistribution;
+
+            // --- Análisis de Restricciones (Simulado o Extraído si está en el log) ---
+            // Esta parte es difícil de extraer directamente del log si no está formateada
+            // Usaremos valores simulados basados en el ejemplo anterior o podrías adaptar Regex si tu log lo incluye
+            data.constraints = [
+                { name: "Capacidad de aulas", fulfilled: 95, total: 100 }, // Simulado
+                { name: "Disponibilidad Profesor", fulfilled: 98, total: 100 }, // Simulado
+                { name: "Requerimientos Aula (PC)", fulfilled: 48, total: 50 }, // Simulado
+                // Puedes añadir más si tu log los detalla
+            ];
+            data.specificRoomCourses = []; // Vacío si no se extrae del log
+            data.roomAssignments = {}; // Vacío si no se extrae del log
+
+            console.log("Datos extraídos del Log:", data);
+            return data; // Devuelve el objeto con los datos extraídos
+        }
+
+        // Procesar datos de un archivo JSON de horario (horario-data.json)
+        function processTimetableData(jsonData) {
+            console.log("Procesando archivo JSON de Horario...");
+            const data = {};
+
+            // --- Calcular datos a partir del JSON ---
+            const roomAssignments = {};
+            const scoreDistribution = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+            let totalAssignments = 0;
+            let specificRoomCourses = []; // Para cursos con requisitos (necesitaría info adicional)
+            let constraintsFulfilled = { capacity: 0, computers: 0, profAvail: 0, groupAvail: 0, roomAvail: 0 }; // Ejemplo
+
+            for (const day in jsonData) {
+                for (const hour in jsonData[day]) {
+                    const assignmentsInSlot = jsonData[day][hour];
+
+                    assignmentsInSlot.forEach(assignment => {
+                        // Contar solo las asignaciones principales, no las continuaciones
+                        if (!assignment.continuation) {
+                            totalAssignments++;
+
+                            // 1. Conteo de asignaciones por aula
+                            if (!roomAssignments[assignment.room]) {
+                                roomAssignments[assignment.room] = 0;
+                            }
+                            roomAssignments[assignment.room]++;
+
+                            // 2. Distribución de puntuaciones (si existe en el JSON)
+                            if (assignment.score !== undefined && scoreDistribution.hasOwnProperty(assignment.score)) {
+                                scoreDistribution[assignment.score]++;
+                            }
+
+                            // 3. Análisis de restricciones (si la info estuviera detallada por asignación)
+                            //    Esto requeriría que el JSON incluyera más detalles o recalcular aquí
+                            //    Ejemplo simulado:
+                            if (assignment.score >= 3) constraintsFulfilled.capacity++; // Asumiendo que score >= 3 implica capacidad OK
+                            if (assignment.score >= 1) constraintsFulfilled.roomAvail++; // Asumiendo que score >= 1 implica aula OK
+                            // ... etc. (Esta parte es muy dependiente de cómo se genera el JSON)
+
+                            // 4. Aulas específicas (si tuvieras esa info en el JSON)
+                            // if (assignment.requiresSpecificRoom && assignment.requiredRoom) {
+                            //    specificRoomCourses.push({ course: assignment.course, requiredRoom: assignment.requiredRoom, assignedRoom: assignment.room });
+                            // }
+
+                        }
+                    });
+                }
+            }
+
+            data.roomAssignments = roomAssignments;
+            data.scoreDistribution = scoreDistribution;
+
+            // --- Simular datos no presentes en el JSON de horario ---
+            // Datos de fitness (simulados como antes)
+            const fitnessData = [];
+            let currentFitness = 0.5 + Math.random() * 0.2; // Empezar más alto si es un horario bueno
+            const totalGenerations = 300 + Math.floor(Math.random() * 200);
+            for (let i = 0; i < totalGenerations; i++) {
+                currentFitness += (Math.random() * 0.001); // Mejora más lenta
+                currentFitness = Math.min(currentFitness, 0.99);
+                fitnessData.push({ generation: i, fitness: currentFitness });
+            }
+            data.fitnessData = fitnessData;
+            data.bestFitness = currentFitness.toFixed(4);
+            data.totalGenerations = totalGenerations;
+            data.executionTime = (40 + Math.random() * 50).toFixed(1); // Tiempo simulado
+
+            // Restricciones generales (basadas en el conteo simulado de arriba o valores fijos)
+            data.constraints = [
+                { name: "Disponibilidad Aula", fulfilled: constraintsFulfilled.roomAvail, total: totalAssignments },
+                { name: "Capacidad Aula", fulfilled: constraintsFulfilled.capacity, total: totalAssignments },
+                // ... añadir otras basadas en 'constraintsFulfilled' ...
+                { name: "Aulas Específicas", fulfilled: 8, total: 10 } // Simulado si no está en JSON
+            ];
+            data.specificRoomCourses = specificRoomCourses; // Usar lo extraído si es posible
+
+            console.log("Datos procesados del JSON:", data);
+            return data;
+        }
+
+
+        // --- Fin código movido ---
+
+
+        // Datos de muestra para generar aleatoriamente
+        function generateSampleData() {
+            // Datos para evolución del fitness
+            const generations = 500;
+            let fitnessData = [];
+            let currentFitness = 0.2 + Math.random() * 0.1;
+
+            for (let i = 0; i < generations; i++) {
+                if (i % 20 === 0 && Math.random() > 0.3) { currentFitness += (Math.random() * 0.05); }
+                else if (i % 50 === 0) { currentFitness += (Math.random() * 0.08); }
+                else { currentFitness += (Math.random() * 0.002); }
+                currentFitness = Math.min(currentFitness, 0.98);
+                fitnessData.push({ generation: i, fitness: currentFitness });
+            }
+
+            // Distribución de puntuaciones
+            const totalAssignments = 100;
+            const scores = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 };
+            let sumSoFar = 0;
+            scores[0] = Math.floor(Math.random() * 5); sumSoFar += scores[0];
+            scores[1] = Math.floor(Math.random() * 8); sumSoFar += scores[1];
+            scores[2] = Math.floor(Math.random() * 10); sumSoFar += scores[2];
+            scores[3] = Math.floor(Math.random() * 15); sumSoFar += scores[3];
+            scores[4] = Math.floor(Math.random() * 25); sumSoFar += scores[4];
+            // Asegurar que el score 5 no sea negativo
+            const score5 = Math.max(0, totalAssignments - sumSoFar);
+            const scoreDistribution = { ...scores, 5: score5 };
+            // Re-ajustar si la suma no es exacta (poco probable pero posible)
+            let finalSum = 0;
+            for (let score in scoreDistribution) { finalSum += scoreDistribution[score]; }
+            if (finalSum !== totalAssignments) {
+                scoreDistribution[5] += (totalAssignments - finalSum);
+            }
+
+
+            // Restricciones
+            const constraints = [
+                { name: "Slots consecutivos", fulfilled: 25 + Math.floor(Math.random() * 5), total: 30 },
+                { name: "Slots no consecutivos", fulfilled: 15 + Math.floor(Math.random() * 5), total: 20 },
+                { name: "Aulas específicas", fulfilled: 8 + Math.floor(Math.random() * 3), total: 10 },
+                { name: "Capacidad de aulas", fulfilled: 95 + Math.floor(Math.random() * 5), total: 100 },
+                { name: "Disponibilidad de profesores", fulfilled: 98 + Math.floor(Math.random() * 3), total: 100 }
+            ];
+
+            // Aulas específicas
+            const specificRoomCourses = [
+                { course: "Música", requiredRoom: "D217", assignedRoom: Math.random() > 0.1 ? "D217" : "A101" },
+                { course: "Piano", requiredRoom: "D217", assignedRoom: Math.random() > 0.1 ? "D217" : "A102" },
+                { course: "Composición Musical", requiredRoom: "D217", assignedRoom: Math.random() > 0.1 ? "D217" : "A103" },
+                { course: "Acústica", requiredRoom: "D218", assignedRoom: Math.random() > 0.1 ? "D218" : "B201" },
+                { course: "Producción Audiovisual", requiredRoom: "D218", assignedRoom: Math.random() > 0.1 ? "D218" : "B202" }
+            ];
+
+            // Distribución de asignaciones por aula
+            const rooms = ["A101", "A102", "A103", "A104", "B201", "B202", "B203", "C301", "D217", "D218"];
+            const roomAssignments = {};
+            rooms.forEach(room => {
+                if (room === "D217") { roomAssignments[room] = 3 + Math.floor(Math.random() * 2); }
+                else if (room === "D218") { roomAssignments[room] = 2 + Math.floor(Math.random() * 2); }
+                else { roomAssignments[room] = 5 + Math.floor(Math.random() * 15); }
+            });
+
+            return {
+                bestFitness: currentFitness.toFixed(4),
+                totalGenerations: generations,
+                executionTime: (30 + Math.random() * 40).toFixed(1),
+                fitnessData: fitnessData,
+                scoreDistribution: scoreDistribution,
+                constraints: constraints,
+                specificRoomCourses: specificRoomCourses,
+                roomAssignments: roomAssignments
+            };
+        }
+
+        // Función para crear o actualizar los gráficos
+        function updateCharts(data) {
+            if (!data) {
+                console.error("updateCharts fue llamada sin datos.");
+                return;
+            }
+            console.log("Actualizando gráficos con:", data);
+
+
+            // --- Actualizar estadísticas principales ---
+            document.getElementById('bestFitness').textContent = data.bestFitness || 'N/A';
+            document.getElementById('totalGenerations').textContent = data.totalGenerations || 'N/A';
+            document.getElementById('executionTime').textContent = (data.executionTime || 'N/A') + 's';
+
+            // Calcular porcentaje total de restricciones satisfechas
+            let totalFulfilled = 0;
+            let totalConstraints = 0;
+            if (data.constraints && data.constraints.length > 0) {
+                data.constraints.forEach(constraint => {
+                    totalFulfilled += constraint.fulfilled || 0;
+                    totalConstraints += constraint.total || 0;
+                });
+            }
+
+            const constraintSatisfactionPercent = totalConstraints > 0 ? Math.round((totalFulfilled / totalConstraints) * 100) : 0;
+            document.getElementById('constraintsSatisfied').textContent = constraintSatisfactionPercent + '%';
+
+
+            // --- Gráfico de evolución de fitness ---
+            const ctx1 = document.getElementById('fitnessChart').getContext('2d');
+            if (fitnessChart) { fitnessChart.destroy(); } // Destruir gráfico previo si existe
+            if (data.fitnessData && data.fitnessData.length > 0) {
+                fitnessChart = new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        labels: data.fitnessData.map(d => d.generation),
+                        datasets: [{
+                            label: 'Fitness',
+                            data: data.fitnessData.map(d => d.fitness),
+                            borderColor: 'var(--primary-color)', // Usar variable CSS
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            borderWidth: 2, tension: 0.2, fill: true
+                        }]
+                    }, // Opciones del gráfico (igual que antes)
+                    options: { responsive: true, maintainAspectRatio: false, /* ... */ }
+                });
+            } else {
+                // Mostrar mensaje si no hay datos de fitness
+                ctx1.clearRect(0, 0, ctx1.canvas.width, ctx1.canvas.height); // Limpiar canvas
+                ctx1.font = "16px Arial";
+                ctx1.fillStyle = "#888";
+                ctx1.textAlign = "center";
+                ctx1.fillText("No hay datos de evolución de fitness disponibles.", ctx1.canvas.width / 2, ctx1.canvas.height / 2);
+            }
+
+
+            // --- Gráfico de distribución de puntuaciones ---
+            const ctx2 = document.getElementById('scoreDistributionChart').getContext('2d');
+            if (scoreDistributionChart) { scoreDistributionChart.destroy(); }
+            if (data.scoreDistribution) {
+                const scoreLabels = Object.keys(data.scoreDistribution);
+                const scoreValues = Object.values(data.scoreDistribution);
+                scoreDistributionChart = new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: scoreLabels.map(score => `${score} pts`),
+                        datasets: [{
+                            label: 'Asignaciones',
+                            data: scoreValues,
+                            backgroundColor: [ /* ... tus colores ... */
+                                'rgba(231, 76, 60, 0.7)', 'rgba(241, 196, 15, 0.7)',
+                                'rgba(243, 156, 18, 0.7)', 'rgba(46, 204, 113, 0.7)',
+                                'rgba(52, 152, 219, 0.7)', 'rgba(155, 89, 182, 0.7)'],
+                            borderWidth: 1
+                        }]
+                    }, // Opciones del gráfico (igual que antes)
+                    options: { responsive: true, maintainAspectRatio: false, /* ... */ }
+                });
+            } else {
+                ctx2.clearRect(0, 0, ctx2.canvas.width, ctx2.canvas.height);
+                ctx2.font = "16px Arial"; ctx2.fillStyle = "#888"; ctx2.textAlign = "center";
+                ctx2.fillText("No hay datos de distribución de puntuaciones.", ctx2.canvas.width / 2, ctx2.canvas.height / 2);
+            }
+
+
+            // --- Llenar lista de restricciones ---
+            const constraintsList = document.getElementById('constraintsList');
+            constraintsList.innerHTML = ''; // Limpiar lista
+            if (data.constraints && data.constraints.length > 0) {
+                data.constraints.forEach(constraint => {
+                    const fulfilled = constraint.fulfilled || 0;
+                    const total = constraint.total || 0;
+                    const percentage = total > 0 ? Math.round((fulfilled / total) * 100) : 0;
+
+                    const constraintRow = document.createElement('div');
+                    constraintRow.className = 'constraint-row';
+                    constraintRow.innerHTML = `
+                         <div class="constraint-details">
+                             <div class="constraint-name">${constraint.name || 'N/A'}</div>
+                             <div class="constraint-value">${fulfilled}/${total}</div>
+                             <div class="constraint-percentage">${percentage}%</div>
+                         </div>
+                         <div class="constraint-bar-container">
+                              <div class="constraint-bar">
+                                  <div class="constraint-bar-fill" style="width: ${percentage}%;"></div>
+                              </div>
+                         </div>
+                     `;
+                    constraintsList.appendChild(constraintRow);
+                });
+            } else {
+                constraintsList.innerHTML = '<p>No hay datos de análisis de restricciones disponibles.</p>';
+            }
+
+
+            // --- Gráfico de requisitos de aula específica (Pie Chart) ---
+            const ctx4 = document.getElementById('roomRequirementsChart').getContext('2d');
+            if (roomRequirementsChart) { roomRequirementsChart.destroy(); }
+            const roomConstraint = data.constraints ? data.constraints.find(c => c.name && c.name.toLowerCase().includes("aulas específicas")) : null;
+            if (roomConstraint && roomConstraint.total > 0) {
+                roomRequirementsChart = new Chart(ctx4, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Cumplidos', 'No Cumplidos'],
+                        datasets: [{
+                            data: [roomConstraint.fulfilled, roomConstraint.total - roomConstraint.fulfilled],
+                            backgroundColor: ['rgba(46, 204, 113, 0.7)', 'rgba(231, 76, 60, 0.7)'],
+                            borderColor: ['rgba(46, 204, 113, 1)', 'rgba(231, 76, 60, 1)'],
+                            borderWidth: 1
+                        }]
+                    }, // Opciones (igual que antes)
+                    options: { responsive: true, maintainAspectRatio: false, /* ... */ }
+                });
+            } else {
+                ctx4.clearRect(0, 0, ctx4.canvas.width, ctx4.canvas.height);
+                ctx4.font = "16px Arial"; ctx4.fillStyle = "#888"; ctx4.textAlign = "center";
+                ctx4.fillText("No hay datos de aulas específicas.", ctx4.canvas.width / 2, ctx4.canvas.height / 2);
+            }
+
+
+            // --- Gráfico de Slots Consecutivos vs No Consecutivos (Bar Chart) ---
+            const ctx3 = document.getElementById('slotsChart').getContext('2d');
+            if (slotsChart) { slotsChart.destroy(); }
+            const slotConstraints = data.constraints ? data.constraints.filter(c =>
+                c.name && (c.name.toLowerCase().includes("slots consecutivos") || c.name.toLowerCase().includes("slots no consecutivos"))) : [];
+            if (slotConstraints.length > 0) {
+                slotsChart = new Chart(ctx3, {
+                    type: 'bar',
+                    data: {
+                        labels: slotConstraints.map(c => c.name),
+                        datasets: [
+                            { label: 'Cumplidos', data: slotConstraints.map(c => c.fulfilled), backgroundColor: 'rgba(46, 204, 113, 0.7)', /* ... */ },
+                            { label: 'No Cumplidos', data: slotConstraints.map(c => c.total - c.fulfilled), backgroundColor: 'rgba(231, 76, 60, 0.7)', /* ... */ }
+                        ]
+                    }, // Opciones (igual que antes)
+                    options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, /* ... */ } } }
+                });
+            } else {
+                ctx3.clearRect(0, 0, ctx3.canvas.width, ctx3.canvas.height);
+                ctx3.font = "16px Arial"; ctx3.fillStyle = "#888"; ctx3.textAlign = "center";
+                ctx3.fillText("No hay datos de slots.", ctx3.canvas.width / 2, ctx3.canvas.height / 2);
+            }
+
+
+            // --- Tabla de aulas específicas ---
+            const specificRoomsTable = document.getElementById('specificRoomsTable').getElementsByTagName('tbody')[0];
+            specificRoomsTable.innerHTML = ''; // Limpiar tabla
+            if (data.specificRoomCourses && data.specificRoomCourses.length > 0) {
+                data.specificRoomCourses.forEach(course => {
+                    const row = specificRoomsTable.insertRow();
+                    row.insertCell(0).textContent = course.course || 'N/A';
+                    row.insertCell(1).textContent = course.requiredRoom || 'N/A';
+                    row.insertCell(2).textContent = course.assignedRoom || 'N/A';
+                    const cellSatisfied = row.insertCell(3);
+                    const isSatisfied = course.requiredRoom && course.assignedRoom && course.requiredRoom === course.assignedRoom;
+                    cellSatisfied.textContent = isSatisfied ? '✓' : '✗';
+                    cellSatisfied.className = isSatisfied ? 'room-satisfaction-high' : 'room-satisfaction-low';
+                });
+            } else {
+                const row = specificRoomsTable.insertRow();
+                const cell = row.insertCell(0);
+                cell.colSpan = 4; // Ocupar todas las columnas
+                cell.textContent = "No hay datos detallados de aulas específicas.";
+                cell.style.textAlign = "center";
+                cell.style.fontStyle = "italic";
+            }
+
+
+            // --- Gráfico de asignaciones por aula ---
+            const ctx5 = document.getElementById('roomAssignmentChart').getContext('2d');
+            if (roomAssignmentChart) { roomAssignmentChart.destroy(); }
+            if (data.roomAssignments && Object.keys(data.roomAssignments).length > 0) {
+                const roomNames = Object.keys(data.roomAssignments);
+                const roomCounts = Object.values(data.roomAssignments);
+                const roomColors = roomNames.map(room => { /* ... tu lógica de colores ... */
+                    if (room === 'D217' || room === 'D218') return 'rgba(231, 76, 60, 0.7)'; // Rojo
+                    if (room.startsWith('B')) return 'rgba(52, 152, 219, 0.7)'; // Azul (PC)
+                    return 'rgba(149, 165, 166, 0.7)'; // Gris
+                });
+
+                roomAssignmentChart = new Chart(ctx5, {
+                    type: 'bar',
+                    data: {
+                        labels: roomNames,
+                        datasets: [{
+                            label: 'Asignaciones',
+                            data: roomCounts,
+                            backgroundColor: roomColors,
+                            borderColor: roomColors.map(color => color.replace('0.7', '1')),
+                            borderWidth: 1
+                        }]
+                    }, // Opciones (igual que antes)
+                    options: { responsive: true, maintainAspectRatio: false, /* ... */ }
+                });
+            } else {
+                ctx5.clearRect(0, 0, ctx5.canvas.width, ctx5.canvas.height);
+                ctx5.font = "16px Arial"; ctx5.fillStyle = "#888"; ctx5.textAlign = "center";
+                ctx5.fillText("No hay datos de asignaciones por aula.", ctx5.canvas.width / 2, ctx5.canvas.height / 2);
+            }
+        } // Fin updateCharts
+
+    </script>
+
+</body>
+
+</html>
