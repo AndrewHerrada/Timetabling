@@ -199,6 +199,24 @@ class Chromosome {
             }
         }
 
+        // 8. NUEVO: Verificar restricción de horario para grupos específicos
+        const restrictedGroups = ["G7", "G8", "G9", "G10", "G11", "G12", "G13", "G14"];
+        if (assignment.course.studentGroups.some(g => restrictedGroups.includes(g.id))) {
+            // Verificar que la hora del slot principal no sea después de las 19:00 (slots 4 y 5)
+            if (assignment.timeSlot.hourIndex >= 4) {
+                score = 0; // Penalización severa (restricción dura)
+            }
+
+            // También verificar los slots secundarios o consecutivos
+            const allSlots = assignment.getAllTimeSlots();
+            for (const slot of allSlots) {
+                if (slot.hourIndex >= 4) {
+                    score = 0; // Penalización severa (restricción dura)
+                    break;
+                }
+            }
+        }
+
         return score;
     }
 
@@ -340,7 +358,16 @@ class TimetableGenerator {
                 const maxHourIndex = course.requiresConsecutiveSlots ?
                     (HOURS_PER_DAY - course.duration) :
                     (HOURS_PER_DAY - 1);
-                const randomHourIndex = Math.floor(Math.random() * (maxHourIndex + 1));
+                let randomHourIndex = Math.floor(Math.random() * (maxHourIndex + 1));
+
+                // AÑADIR ESTO: Restricción para grupos específicos
+                const restrictedGroups = ["G7", "G8", "G9", "G10", "G11", "G12", "G13", "G14"];
+                if (course.studentGroups.some(g => restrictedGroups.includes(g.id))) {
+                    // Limitar a slots antes de las 19:00 (índice < 4)
+                    const maxAllowedHourIndex = Math.min(maxHourIndex, 3);
+                    randomHourIndex = Math.floor(Math.random() * (maxAllowedHourIndex + 1));
+                }
+
                 const timeSlot = new TimeSlot(randomDayIndex, randomHourIndex);
 
                 // Generar slots secundarios para clases no consecutivas
@@ -483,10 +510,39 @@ class TimetableGenerator {
 
     // Verificar si una asignación es válida en el contexto actual
     isValidAssignment(chromosome, assignment) {
-        // Implementación simple: comprobar si no hay conflictos de aula, profesor o grupo
-        return chromosome.isRoomAvailableForAssignment(assignment) &&
+        // Verificación básica
+        const basicValidation = chromosome.isRoomAvailableForAssignment(assignment) &&
             chromosome.isProfessorAvailableForAssignment(assignment) &&
-            chromosome.areStudentGroupsAvailableForAssignment(assignment);
+            chromosome.areStudentGroupsAvailableForAssignment(assignment) &&
+            this.isRoomRequirementSatisfied(assignment);
+
+        if (!basicValidation) return false;
+
+        // Verificar todas las restricciones duras personalizadas
+        for (const constraint of this.hardConstraints) {
+            if (!constraint.evaluate(assignment)) {
+                return false;
+            }
+        }
+
+        // Verificar la restricción de horario para grupos específicos (para redundancia)
+        const restrictedGroups = ["G7", "G8", "G9", "G10", "G11", "G12", "G13", "G14"];
+        if (assignment.course.studentGroups.some(g => restrictedGroups.includes(g.id))) {
+            // Verificar que la hora del slot principal no sea después de las 19:00 (slots 4 y 5)
+            if (assignment.timeSlot.hourIndex >= 4) {
+                return false;
+            }
+
+            // También verificar los slots secundarios o consecutivos
+            const allSlots = assignment.getAllTimeSlots();
+            for (const slot of allSlots) {
+                if (slot.hourIndex >= 4) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     // Reparar una asignación problemática
@@ -503,20 +559,31 @@ class TimetableGenerator {
             }
         }
 
+        // Determinar el rango de horas permitido según los grupos
+        const restrictedGroups = ["G7", "G8", "G9", "G10", "G11", "G12", "G13", "G14"];
+        const isRestricted = course.studentGroups.some(g => restrictedGroups.includes(g.id));
+
         // Intentar diferentes combinaciones hasta encontrar una válida
         for (const room of roomsToTry) {
             for (let dayIndex = 0; dayIndex < DAYS_OF_WEEK.length; dayIndex++) {
-                const maxHourIndex = course.requiresConsecutiveSlots ?
+                // Determinar el rango de horas permitido
+                let maxPossibleHourIndex = course.requiresConsecutiveSlots ?
                     (HOURS_PER_DAY - course.duration) :
                     (HOURS_PER_DAY - 1);
 
-                for (let hourIndex = 0; hourIndex <= maxHourIndex; hourIndex++) {
+                // Restringir el horario para grupos específicos
+                if (isRestricted) {
+                    maxPossibleHourIndex = Math.min(maxPossibleHourIndex, 3); // Máximo hasta las 19:00 (índice 3)
+                }
+
+                for (let hourIndex = 0; hourIndex <= maxPossibleHourIndex; hourIndex++) {
                     const timeSlot = new TimeSlot(dayIndex, hourIndex);
 
                     // Para clases no consecutivas, generar slots secundarios
                     let secondaryTimeSlots = [];
                     if (!course.requiresConsecutiveSlots && course.duration > 1) {
-                        secondaryTimeSlots = this.generateSecondaryTimeSlots(course, timeSlot);
+                        // Asegurarse de que los slots secundarios también respeten la restricción
+                        secondaryTimeSlots = this.generateSecondaryTimeSlots(course, timeSlot, isRestricted);
                     }
 
                     const newAssignment = new ClassAssignment(course, room, timeSlot, secondaryTimeSlots);
@@ -609,7 +676,16 @@ class TimetableGenerator {
             const maxHourIndex = course.requiresConsecutiveSlots ?
                 (HOURS_PER_DAY - course.duration) :
                 (HOURS_PER_DAY - 1);
-            const randomHourIndex = Math.floor(Math.random() * (maxHourIndex + 1));
+            let randomHourIndex = Math.floor(Math.random() * (maxHourIndex + 1));
+
+            // AÑADIR ESTO: Restricción para grupos específicos
+            const restrictedGroups = ["G7", "G8", "G9", "G10", "G11", "G12", "G13", "G14"];
+            if (course.studentGroups.some(g => restrictedGroups.includes(g.id))) {
+                // Limitar a slots antes de las 19:00 (índice < 4)
+                const maxAllowedHourIndex = Math.min(maxHourIndex, 3);
+                randomHourIndex = Math.floor(Math.random() * (maxAllowedHourIndex + 1));
+            }
+
             const newTimeSlot = new TimeSlot(randomDayIndex, randomHourIndex);
 
             // Para clases no consecutivas, generar nuevos slots secundarios
@@ -621,18 +697,27 @@ class TimetableGenerator {
             assignment.timeSlot = newTimeSlot;
         }
     }
-    generateSecondaryTimeSlots(course, mainTimeSlot) {
+    generateSecondaryTimeSlots(course, mainTimeSlot, isRestricted = false) {
         if (course.requiresConsecutiveSlots || course.duration <= 1) {
             return [];
         }
 
         const secondarySlots = [];
         const remainingSlots = course.duration - 1;
+        let maxAttempts = 100; // Evitar bucle infinito
 
         // Generar slots secundarios aleatorios diferentes al principal
-        while (secondarySlots.length < remainingSlots) {
+        while (secondarySlots.length < remainingSlots && maxAttempts > 0) {
+            maxAttempts--;
             const randomDayIndex = Math.floor(Math.random() * DAYS_OF_WEEK.length);
-            const randomHourIndex = Math.floor(Math.random() * HOURS_PER_DAY);
+
+            // Limitar el rango de horas si es grupo restringido
+            let maxHourIndex = HOURS_PER_DAY - 1;
+            if (isRestricted) {
+                maxHourIndex = 3; // Máximo hasta las 19:00 (índice 3)
+            }
+
+            const randomHourIndex = Math.floor(Math.random() * (maxHourIndex + 1));
             const slot = new TimeSlot(randomDayIndex, randomHourIndex);
 
             // Verificar que no sea igual al slot principal o a uno ya añadido
@@ -1008,17 +1093,31 @@ function runExample() {
     generator.addConsecutiveSlotsConstraint();
     generator.addSpecificRoomConstraint(); // Añadir la nueva restricción de aula específica
 
-    // Añadir restricción dura personalizada (no clases después de las 4 PM para el grupo 1º A)
+    // Añadir restricción dura para que ciertos grupos no tengan clase después de las 19:00
     generator.addHardConstraint(
         (assignment) => {
-            if (assignment.course.studentGroups.some(g => g.id === "G1") && assignment.timeSlot.hourIndex >= 8) {
-                return false; // No cumple la restricción
+            // Grupos que no deben tener clases después de las 19:00
+            const restrictedGroups = ["G7", "G8", "G9", "G10", "G11", "G12", "G13", "G14"];
+
+            // Si alguno de los grupos de la asignación está en la lista de restricción
+            if (assignment.course.studentGroups.some(g => restrictedGroups.includes(g.id))) {
+                // Verificar que la hora del slot principal no sea después de las 19:00 (slots 4 y 5)
+                if (assignment.timeSlot.hourIndex >= 4) {
+                    return false; // No cumple la restricción
+                }
+
+                // También verificar los slots secundarios o consecutivos
+                const allSlots = assignment.getAllTimeSlots();
+                for (const slot of allSlots) {
+                    if (slot.hourIndex >= 4) {
+                        return false; // No cumple la restricción
+                    }
+                }
             }
             return true; // Cumple la restricción
         },
-        "No clases después de las 4 PM para el grupo 1º A"
+        "No clases después de las 19:00 para los grupos de iniciación y básico"
     );
-
     // Añadir restricción blanda personalizada (preferir aulas con mayor capacidad)
     generator.addSoftConstraint(
         (assignment) => {
@@ -1155,3 +1254,4 @@ module.exports = {
     Chromosome,
     TimetableGenerator
 };
+

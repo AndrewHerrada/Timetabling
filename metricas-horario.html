@@ -1,0 +1,861 @@
+
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Análisis de Métricas del Horario</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; }
+            .container { max-width: 1200px; margin: 0 auto; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .section { margin-bottom: 40px; border: 1px solid #ddd; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+            .section-title { border-bottom: 2px solid #3498db; padding-bottom: 10px; color: #2c3e50; }
+            .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 20px 0; }
+            .metric-card { background-color: #f8f9fa; border-radius: 8px; padding: 20px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+            .metric-value { font-size: 24px; font-weight: bold; margin: 10px 0; color: #3498db; }
+            .metric-label { font-size: 14px; color: #7f8c8d; }
+            .chart-container { height: 400px; margin: 20px 0; }
+            .table-container { overflow-x: auto; }
+            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            th { background-color: #3498db; color: white; text-align: left; padding: 10px; }
+            td { padding: 10px; border-bottom: 1px solid #ddd; }
+            tr:nth-child(even) { background-color: #f2f2f2; }
+            .good { background-color: #d4edda; color: #155724; }
+            .warning { background-color: #fff3cd; color: #856404; }
+            .danger { background-color: #f8d7da; color: #721c24; }
+            .timetable { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; margin: 20px 0; }
+            .timetable-header { background-color: #3498db; color: white; padding: 10px; text-align: center; font-weight: bold; }
+            .timetable-hour { background-color: #3498db; color: white; padding: 10px; text-align: center; }
+            .timetable-cell { padding: 10px; text-align: center; background-color: #f8f9fa; }
+            .timetable-cell.occupied { background-color: #d4edda; }
+            .footer { text-align: center; margin-top: 50px; font-size: 14px; color: #7f8c8d; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Análisis de Métricas del Horario</h1>
+                <p>Generado el 27/4/2025, 8:27:56 p. m.</p>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">Resumen General</h2>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Fitness</div>
+                        <div class="metric-value">0.9978</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Total de Cursos</div>
+                        <div class="metric-value">93</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Total de Horas Asignadas</div>
+                        <div class="metric-value">147</div>
+                    </div>
+                    <div class="metric-card danger">
+                        <div class="metric-label">Restricción de Iniciación y Básico</div>
+                        <div class="metric-value">✗</div>
+                        <div>6 violaciones</div>
+                    </div>
+                </div>
+                
+                <h3>Cumplimiento de Restricciones</h3>
+                <div class="table-container">
+                    <table>
+                        <tr>
+                            <th>Restricción</th>
+                            <th>Violaciones</th>
+                            <th>Cumplimiento</th>
+                        </tr>
+                        <tr class="danger">
+                            <td>Sin conflictos de aula</td>
+                            <td>49</td>
+                            <td>47.31%</td>
+                        </tr>
+                        <tr class="danger">
+                            <td>Sin conflictos de profesor</td>
+                            <td>33</td>
+                            <td>64.52%</td>
+                        </tr>
+                        <tr class="danger">
+                            <td>Sin conflictos de grupo</td>
+                            <td>55</td>
+                            <td>40.86%</td>
+                        </tr>
+                        <tr class="good">
+                            <td>Requisitos de aulas específicas</td>
+                            <td>0</td>
+                            <td>100.00%</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <h3>Violaciones de Restricción para Grupos de Iniciación y Básico</h3><div class="danger" style="padding: 10px; margin-top: 10px; border-radius: 5px;"><p>Se encontraron las siguientes violaciones:</p><ul><li>Solfeo-Ritmica (1°Ini (B)) - Jueves 19:00</li><li>Teclado (1°Ini (A)) - Miércoles 20:00</li><li>Teclado (1°Ini (B)) - Miércoles 19:00</li><li>Iniciacion Instrumental (1°Ini (A), 1°Ini (B)) - Miércoles 19:00</li><li>Solfeo-Ritmica (2°Ini (A)) - Jueves 20:00</li><li>Solfeo-Ritmica (1°Bas) - Viernes 19:00</li></ul></div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">Distribución Temporal</h2>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Balance Diario</div>
+                        <div class="metric-value">0.9147</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Balance Horario</div>
+                        <div class="metric-value">0.8743</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="dailyDistributionChart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="hourlyDistributionChart"></canvas>
+                </div>
+                
+                <h3>Matriz de Ocupación</h3>
+                <div class="timetable">
+                    <div class="timetable-header">Hora / Día</div>
+                    <div class="timetable-header">Lunes</div><div class="timetable-header">Martes</div><div class="timetable-header">Miércoles</div><div class="timetable-header">Jueves</div><div class="timetable-header">Viernes</div>
+                    
+                    <div class="timetable-hour">15:00</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 1);">6</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 1);">10</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 1);">5</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 0.8);">4</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 0.4);">2</div><div class="timetable-hour">16:00</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 1);">7</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 1);">9</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 0.8);">4</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 0.6);">3</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 0.6);">3</div><div class="timetable-hour">17:00</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 1);">8</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 1);">6</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 1);">8</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 1);">7</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 0.8);">4</div><div class="timetable-hour">18:00</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 1);">6</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 1);">6</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 1);">9</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 1);">8</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 0.6);">3</div><div class="timetable-hour">19:00</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 0.6);">3</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 0.2);">1</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 1);">5</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 0.8);">4</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 0.6);">3</div><div class="timetable-hour">20:00</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 0.6);">3</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 0.4);">2</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 0.4);">2</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 0.4);">2</div><div class="timetable-cell occupied" style="background-color: rgba(46, 204, 113, 0.8);">4</div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">Utilización de Aulas</h2>
+                <div class="chart-container">
+                    <canvas id="roomUtilizationChart"></canvas>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <tr>
+                            <th>Aula</th>
+                            <th>Capacidad</th>
+                            <th>Slots Asignados</th>
+                            <th>Utilización</th>
+                        </tr>
+                        
+        <tr class="">
+            <td>B-101</td>
+            <td>33</td>
+            <td>22</td>
+            <td>73.33%</td>
+        </tr>
+        <tr class="">
+            <td>B-102</td>
+            <td>33</td>
+            <td>21</td>
+            <td>70.00%</td>
+        </tr>
+        <tr class="">
+            <td>D-218</td>
+            <td>30</td>
+            <td>20</td>
+            <td>66.67%</td>
+        </tr>
+        <tr class="">
+            <td>B-103</td>
+            <td>33</td>
+            <td>18</td>
+            <td>60.00%</td>
+        </tr>
+        <tr class="">
+            <td>D-217</td>
+            <td>30</td>
+            <td>13</td>
+            <td>43.33%</td>
+        </tr>
+        <tr class="warning">
+            <td>B-104</td>
+            <td>33</td>
+            <td>12</td>
+            <td>40.00%</td>
+        </tr>
+        <tr class="warning">
+            <td>B-105</td>
+            <td>33</td>
+            <td>7</td>
+            <td>23.33%</td>
+        </tr>
+        <tr class="warning">
+            <td>A-203</td>
+            <td>25</td>
+            <td>6</td>
+            <td>20.00%</td>
+        </tr>
+        <tr class="warning">
+            <td>B-202</td>
+            <td>33</td>
+            <td>5</td>
+            <td>16.67%</td>
+        </tr>
+        <tr class="warning">
+            <td>A-304</td>
+            <td>20</td>
+            <td>4</td>
+            <td>13.33%</td>
+        </tr>
+        <tr class="warning">
+            <td>A-305</td>
+            <td>20</td>
+            <td>4</td>
+            <td>13.33%</td>
+        </tr>
+        <tr class="warning">
+            <td>E-101</td>
+            <td>200</td>
+            <td>4</td>
+            <td>13.33%</td>
+        </tr>
+        <tr class="warning">
+            <td>B-205</td>
+            <td>33</td>
+            <td>3</td>
+            <td>10.00%</td>
+        </tr>
+        <tr class="warning">
+            <td>B-201</td>
+            <td>33</td>
+            <td>2</td>
+            <td>6.67%</td>
+        </tr>
+        <tr class="warning">
+            <td>A-302</td>
+            <td>20</td>
+            <td>2</td>
+            <td>6.67%</td>
+        </tr>
+        <tr class="warning">
+            <td>A-303</td>
+            <td>20</td>
+            <td>2</td>
+            <td>6.67%</td>
+        </tr>
+        <tr class="warning">
+            <td>C-101</td>
+            <td>200</td>
+            <td>2</td>
+            <td>6.67%</td>
+        </tr>
+        <tr class="warning">
+            <td>B-203</td>
+            <td>33</td>
+            <td>0</td>
+            <td>0.00%</td>
+        </tr>
+        <tr class="warning">
+            <td>B-204</td>
+            <td>33</td>
+            <td>0</td>
+            <td>0.00%</td>
+        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">Carga de Profesores</h2>
+                <div class="chart-container">
+                    <canvas id="professorLoadChart"></canvas>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <tr>
+                            <th>Profesor</th>
+                            <th>Total Horas</th>
+                            <th>Cursos</th>
+                            <th>Balance</th>
+                            <th>Distribución Diaria</th>
+                        </tr>
+                        
+        <tr>
+            <td>4-5 profesores</td>
+            <td>15</td>
+            <td>8</td>
+            <td class="warning">0.3696</td>
+            <td>Lunes: 5, Martes: 2, Miércoles: 3, Jueves: 5, Viernes: 0</td>
+        </tr>
+        <tr>
+            <td>Juan Oscar Guzman</td>
+            <td>14</td>
+            <td>7</td>
+            <td class="warning">0.3877</td>
+            <td>Lunes: 5, Martes: 3, Miércoles: 2, Jueves: 4, Viernes: 0</td>
+        </tr>
+        <tr>
+            <td>Jose Carlos Gonzales</td>
+            <td>12</td>
+            <td>7</td>
+            <td class="warning">0.3790</td>
+            <td>Lunes: 2, Martes: 5, Miércoles: 3, Jueves: 1, Viernes: 1</td>
+        </tr>
+        <tr>
+            <td>Daniel Condori</td>
+            <td>10</td>
+            <td>5</td>
+            <td class="warning">0.4550</td>
+            <td>Lunes: 0, Martes: 2, Miércoles: 3, Jueves: 2, Viernes: 3</td>
+        </tr>
+        <tr>
+            <td>Antonio Claros</td>
+            <td>10</td>
+            <td>5</td>
+            <td class="warning">0.4550</td>
+            <td>Lunes: 2, Martes: 1, Miércoles: 4, Jueves: 1, Viernes: 2</td>
+        </tr>
+        <tr>
+            <td>Ronald Nuñez</td>
+            <td>8</td>
+            <td>8</td>
+            <td class="warning">0.3666</td>
+            <td>Lunes: 3, Martes: 2, Miércoles: 2, Jueves: 0, Viernes: 1</td>
+        </tr>
+        <tr>
+            <td>Edwin Canaza</td>
+            <td>8</td>
+            <td>5</td>
+            <td class="warning">0.3666</td>
+            <td>Lunes: 3, Martes: 0, Miércoles: 1, Jueves: 2, Viernes: 2</td>
+        </tr>
+        <tr>
+            <td>David Janco</td>
+            <td>8</td>
+            <td>5</td>
+            <td class="warning">0.5031</td>
+            <td>Lunes: 3, Martes: 1, Miércoles: 2, Jueves: 1, Viernes: 1</td>
+        </tr>
+        <tr>
+            <td>Wendy Valencia</td>
+            <td>7</td>
+            <td>5</td>
+            <td class="warning">0.0380</td>
+            <td>Lunes: 0, Martes: 3, Miércoles: 3, Jueves: 1, Viernes: 0</td>
+        </tr>
+        <tr>
+            <td>Milenka Garcia</td>
+            <td>7</td>
+            <td>5</td>
+            <td class="warning">0.4326</td>
+            <td>Lunes: 1, Martes: 3, Miércoles: 1, Jueves: 1, Viernes: 1</td>
+        </tr>
+        <tr>
+            <td>Arturo Arando</td>
+            <td>6</td>
+            <td>5</td>
+            <td class="warning">0.0000</td>
+            <td>Lunes: 1, Martes: 1, Miércoles: 0, Jueves: 4, Viernes: 0</td>
+        </tr>
+        <tr>
+            <td>Octavio Montaño</td>
+            <td>5</td>
+            <td>4</td>
+            <td class="warning">0.3738</td>
+            <td>Lunes: 1, Martes: 1, Miércoles: 1, Jueves: 0, Viernes: 2</td>
+        </tr>
+        <tr>
+            <td>Joseph Herrada</td>
+            <td>5</td>
+            <td>3</td>
+            <td class="warning">0.3738</td>
+            <td>Lunes: 1, Martes: 1, Miércoles: 2, Jueves: 0, Viernes: 1</td>
+        </tr>
+        <tr>
+            <td>Manuel Gonzales</td>
+            <td>4</td>
+            <td>2</td>
+            <td class="warning">0.0761</td>
+            <td>Lunes: 1, Martes: 2, Miércoles: 1, Jueves: 0, Viernes: 0</td>
+        </tr>
+        <tr>
+            <td>Augusto Guzman</td>
+            <td>4</td>
+            <td>2</td>
+            <td class="warning">0.0761</td>
+            <td>Lunes: 0, Martes: 0, Miércoles: 2, Jueves: 1, Viernes: 1</td>
+        </tr>
+        <tr>
+            <td>Jose Armando</td>
+            <td>4</td>
+            <td>3</td>
+            <td class="warning">0.0761</td>
+            <td>Lunes: 1, Martes: 2, Miércoles: 1, Jueves: 0, Viernes: 0</td>
+        </tr>
+        <tr>
+            <td>Kevin Torrico</td>
+            <td>4</td>
+            <td>2</td>
+            <td class="warning">0.0761</td>
+            <td>Lunes: 0, Martes: 1, Miércoles: 0, Jueves: 2, Viernes: 1</td>
+        </tr>
+        <tr>
+            <td>Adriana Arias</td>
+            <td>3</td>
+            <td>2</td>
+            <td class="warning">0.1969</td>
+            <td>Lunes: 1, Martes: 0, Miércoles: 1, Jueves: 1, Viernes: 0</td>
+        </tr>
+        <tr>
+            <td>Melanie Loayza</td>
+            <td>2</td>
+            <td>1</td>
+            <td class="warning">0.0000</td>
+            <td>Lunes: 1, Martes: 0, Miércoles: 0, Jueves: 1, Viernes: 0</td>
+        </tr>
+        <tr>
+            <td>Sarah Daza</td>
+            <td>2</td>
+            <td>2</td>
+            <td class="warning">0.0000</td>
+            <td>Lunes: 0, Martes: 1, Miércoles: 0, Jueves: 1, Viernes: 0</td>
+        </tr>
+        <tr>
+            <td>Andrew Herrada</td>
+            <td>2</td>
+            <td>2</td>
+            <td class="warning">0.0000</td>
+            <td>Lunes: 1, Martes: 1, Miércoles: 0, Jueves: 0, Viernes: 0</td>
+        </tr>
+        <tr>
+            <td>Josue Ortiz</td>
+            <td>2</td>
+            <td>1</td>
+            <td class="warning">0.0000</td>
+            <td>Lunes: 0, Martes: 0, Miércoles: 0, Jueves: 0, Viernes: 2</td>
+        </tr>
+        <tr>
+            <td>Libertad Aguilar</td>
+            <td>2</td>
+            <td>1</td>
+            <td class="warning">0.0000</td>
+            <td>Lunes: 1, Martes: 0, Miércoles: 0, Jueves: 0, Viernes: 1</td>
+        </tr>
+        <tr>
+            <td>Ivan Katery</td>
+            <td>1</td>
+            <td>1</td>
+            <td class="warning">0.0000</td>
+            <td>Lunes: 0, Martes: 1, Miércoles: 0, Jueves: 0, Viernes: 0</td>
+        </tr>
+        <tr>
+            <td>David Gonzales</td>
+            <td>1</td>
+            <td>1</td>
+            <td class="warning">0.0000</td>
+            <td>Lunes: 0, Martes: 0, Miércoles: 1, Jueves: 0, Viernes: 0</td>
+        </tr>
+        <tr>
+            <td>Denise Avila</td>
+            <td>1</td>
+            <td>1</td>
+            <td class="warning">0.0000</td>
+            <td>Lunes: 0, Martes: 1, Miércoles: 0, Jueves: 0, Viernes: 0</td>
+        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">Análisis de Grupos</h2>
+                <div class="chart-container">
+                    <canvas id="groupHoursChart"></canvas>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <tr>
+                            <th>Grupo</th>
+                            <th>Total Horas</th>
+                            <th>Balance</th>
+                            <th>Máx. Consecutivas</th>
+                            <th>Gaps</th>
+                            <th>Clases Tarde</th>
+                        </tr>
+                        
+        <tr>
+            <td>1°Inf (A)</td>
+            <td>0</td>
+            <td class="warning">0.0000</td>
+            <td>0</td>
+            <td>0</td>
+            <td class="good">No</td>
+        </tr>
+        <tr>
+            <td>2°Ini (B)</td>
+            <td>12</td>
+            <td class="warning">0.1869</td>
+            <td>2</td>
+            <td>2</td>
+            <td class="good">No</td>
+        </tr>
+        <tr>
+            <td>3°Ini</td>
+            <td>12</td>
+            <td class="warning">0.4372</td>
+            <td>2</td>
+            <td>2</td>
+            <td class="good">No</td>
+        </tr>
+        <tr>
+            <td>1°Bas</td>
+            <td>15</td>
+            <td class="warning">0.4441</td>
+            <td>3</td>
+            <td>4</td>
+            <td class="danger">1 ⚠️</td>
+        </tr>
+        <tr>
+            <td>2°Bas</td>
+            <td>15</td>
+            <td class="warning">0.2424</td>
+            <td>4</td>
+            <td>1</td>
+            <td class="good">No</td>
+        </tr>
+        <tr>
+            <td>3°Bas</td>
+            <td>15</td>
+            <td class="warning">0.2138</td>
+            <td>3</td>
+            <td>1</td>
+            <td class="good">No</td>
+        </tr>
+        <tr>
+            <td>1°Inv (A)</td>
+            <td>16</td>
+            <td class="good">0.8754</td>
+            <td>3</td>
+            <td>7</td>
+            <td class="good">No</td>
+        </tr>
+        <tr>
+            <td>1°Inv (B)</td>
+            <td>16</td>
+            <td class="warning">0.2788</td>
+            <td>4</td>
+            <td>2</td>
+            <td class="good">No</td>
+        </tr>
+        <tr>
+            <td>2°Inv</td>
+            <td>16</td>
+            <td class="warning">0.5867</td>
+            <td>3</td>
+            <td>2</td>
+            <td class="good">No</td>
+        </tr>
+        <tr>
+            <td>3°Inv</td>
+            <td>16</td>
+            <td class="">0.6367</td>
+            <td>3</td>
+            <td>4</td>
+            <td class="good">No</td>
+        </tr>
+        <tr>
+            <td>1°Int</td>
+            <td>16</td>
+            <td class="warning">0.2021</td>
+            <td>6</td>
+            <td>2</td>
+            <td class="good">No</td>
+        </tr>
+        <tr>
+            <td>1°Inf (B)</td>
+            <td>0</td>
+            <td class="warning">0.0000</td>
+            <td>0</td>
+            <td>0</td>
+            <td class="good">No</td>
+        </tr>
+        <tr>
+            <td>2°Int</td>
+            <td>16</td>
+            <td class="warning">0.4640</td>
+            <td>3</td>
+            <td>7</td>
+            <td class="good">No</td>
+        </tr>
+        <tr>
+            <td>3°Int</td>
+            <td>16</td>
+            <td class="warning">0.5422</td>
+            <td>3</td>
+            <td>5</td>
+            <td class="good">No</td>
+        </tr>
+        <tr>
+            <td>2°Inf (A)</td>
+            <td>0</td>
+            <td class="warning">0.0000</td>
+            <td>0</td>
+            <td>0</td>
+            <td class="good">No</td>
+        </tr>
+        <tr>
+            <td>2°Inf (B)</td>
+            <td>0</td>
+            <td class="warning">0.0000</td>
+            <td>0</td>
+            <td>0</td>
+            <td class="good">No</td>
+        </tr>
+        <tr>
+            <td>3°Inf (A)</td>
+            <td>0</td>
+            <td class="warning">0.0000</td>
+            <td>0</td>
+            <td>0</td>
+            <td class="good">No</td>
+        </tr>
+        <tr>
+            <td>3°Inf (B)</td>
+            <td>0</td>
+            <td class="warning">0.0000</td>
+            <td>0</td>
+            <td>0</td>
+            <td class="good">No</td>
+        </tr>
+        <tr>
+            <td>1°Ini (A)</td>
+            <td>16</td>
+            <td class="warning">0.3348</td>
+            <td>4</td>
+            <td>1</td>
+            <td class="danger">2 ⚠️</td>
+        </tr>
+        <tr>
+            <td>1°Ini (B)</td>
+            <td>16</td>
+            <td class="warning">0.4640</td>
+            <td>4</td>
+            <td>1</td>
+            <td class="danger">2 ⚠️</td>
+        </tr>
+        <tr>
+            <td>2°Ini (A)</td>
+            <td>12</td>
+            <td class="warning">0.3258</td>
+            <td>2</td>
+            <td>2</td>
+            <td class="danger">1 ⚠️</td>
+        </tr>
+                    </table>
+                </div>
+                
+                <h3>Grupos con Restricción de Horario Tarde</h3>
+                <div class="metrics-grid">
+                    
+        <div class="metric-card danger">
+            <div class="metric-label">1°Ini (A)</div>
+            <div class="metric-value">✗</div>
+            <div>2 clases después de 19:00</div>
+        </div>
+        <div class="metric-card danger">
+            <div class="metric-label">1°Ini (B)</div>
+            <div class="metric-value">✗</div>
+            <div>2 clases después de 19:00</div>
+        </div>
+        <div class="metric-card danger">
+            <div class="metric-label">2°Ini (A)</div>
+            <div class="metric-value">✗</div>
+            <div>1 clases después de 19:00</div>
+        </div>
+        <div class="metric-card good">
+            <div class="metric-label">2°Ini (B)</div>
+            <div class="metric-value">✓</div>
+            <div>Cumple restricción</div>
+        </div>
+        <div class="metric-card good">
+            <div class="metric-label">3°Ini</div>
+            <div class="metric-value">✓</div>
+            <div>Cumple restricción</div>
+        </div>
+        <div class="metric-card danger">
+            <div class="metric-label">1°Bas</div>
+            <div class="metric-value">✗</div>
+            <div>1 clases después de 19:00</div>
+        </div>
+        <div class="metric-card good">
+            <div class="metric-label">2°Bas</div>
+            <div class="metric-value">✓</div>
+            <div>Cumple restricción</div>
+        </div>
+        <div class="metric-card good">
+            <div class="metric-label">3°Bas</div>
+            <div class="metric-value">✓</div>
+            <div>Cumple restricción</div>
+        </div>
+                </div>
+            </div>
+            
+            <div class="footer">
+                <p>Generado por Timetable Metrics System - 27/4/2025</p>
+            </div>
+        </div>
+        
+        <script>
+            // Inicializar gráficos
+            document.addEventListener('DOMContentLoaded', function() {
+                // Distribución Diaria
+                new Chart(document.getElementById('dailyDistributionChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: ["Lunes","Martes","Miércoles","Jueves","Viernes"],
+                        datasets: [{
+                            label: 'Clases por día',
+                            data: [33,34,33,28,19],
+                            backgroundColor: 'rgba(52, 152, 219, 0.6)',
+                            borderColor: 'rgba(52, 152, 219, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Distribución de Clases por Día'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+                
+                // Distribución Horaria
+                new Chart(document.getElementById('hourlyDistributionChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: ["15:00","16:00","17:00","18:00","19:00","20:00"],
+                        datasets: [{
+                            label: 'Clases por hora',
+                            data: [27,26,33,32,16,13],
+                            backgroundColor: 'rgba(46, 204, 113, 0.6)',
+                            borderColor: 'rgba(46, 204, 113, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Distribución de Clases por Hora'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+                
+                // Utilización de Aulas
+                new Chart(document.getElementById('roomUtilizationChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: ["B-101","B-102","B-103","B-104","B-105","B-201","B-202","B-203","B-204","B-205","A-203","A-302","A-303","A-304","A-305","D-217","D-218","E-101","C-101"],
+                        datasets: [{
+                            label: 'Utilización (%)',
+                            data: ["73.33","70.00","60.00","40.00","23.33","6.67","16.67","0.00","0.00","10.00","20.00","6.67","6.67","13.33","13.33","43.33","66.67","13.33","6.67"],
+                            backgroundColor: 'rgba(155, 89, 182, 0.6)',
+                            borderColor: 'rgba(155, 89, 182, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Porcentaje de Utilización de Aulas'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100
+                            }
+                        }
+                    }
+                });
+                
+                // Carga de Profesores
+                new Chart(document.getElementById('professorLoadChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: ["4-5 profesores","Juan Oscar Guzman","Jose Carlos Gonzales","Daniel Condori","Antonio Claros","Ronald Nuñez","Edwin Canaza","David Janco","Wendy Valencia","Milenka Garcia","Arturo Arando","Octavio Montaño","Joseph Herrada","Manuel Gonzales","Augusto Guzman"],
+                        datasets: [{
+                            label: 'Horas asignadas',
+                            data: [15,14,12,10,10,8,8,8,7,7,6,5,5,4,4],
+                            backgroundColor: 'rgba(230, 126, 34, 0.6)',
+                            borderColor: 'rgba(230, 126, 34, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Carga Horaria por Profesor (Top 15)'
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+                
+                // Horas por Grupo
+                new Chart(document.getElementById('groupHoursChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: ["1°Inf (A)","1°Inf (B)","2°Inf (A)","2°Inf (B)","3°Inf (A)","3°Inf (B)","1°Ini (A)","1°Ini (B)","2°Ini (A)","2°Ini (B)","3°Ini","1°Bas","2°Bas","3°Bas","1°Inv (A)","1°Inv (B)","2°Inv","3°Inv","1°Int","2°Int","3°Int"],
+                        datasets: [{
+                            label: 'Horas asignadas',
+                            data: [0,0,0,0,0,0,16,16,12,12,12,15,15,15,16,16,16,16,16,16,16],
+                            backgroundColor: 'rgba(52, 73, 94, 0.6)',
+                            borderColor: 'rgba(52, 73, 94, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Horas Totales por Grupo'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            });
+        </script>
+    </body>
+    </html>
+    
