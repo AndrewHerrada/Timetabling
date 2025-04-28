@@ -134,49 +134,56 @@ class Chromosome {
     evaluateAssignment(assignment) {
         let score = 0;
 
-        // 1. Verificar si hay un aula disponible (no hay conflicto)
+        // Calcular el total de estudiantes en esta asignación
+        const totalStudents = assignment.course.studentGroups.reduce((sum, group) => sum + group.size, 0);
+
+        // 1. RESTRICCIÓN DURA: Verificar si hay un aula disponible (no hay conflicto)
         if (this.isRoomAvailableForAssignment(assignment)) {
-            score++;
+            score += 1;
+        } else {
+            // Penalización severa: si el aula no está disponible, puntuación cero
+            return 0;
         }
 
         // 2. Verificar si el aula tiene computadoras si se requieren
         if (!assignment.course.requiresComputers ||
             (assignment.course.requiresComputers && assignment.room.hasComputers)) {
-            score++;
+            score += 1;
         }
 
         // 3. Verificar si el aula tiene capacidad suficiente
-        const totalStudents = assignment.course.studentGroups.reduce((sum, group) => sum + group.size, 0);
         if (assignment.room.capacity >= totalStudents) {
-            score++;
+            score += 1;
+        } else {
+            // Si el aula no tiene capacidad suficiente, penalización severa
+            return 0;
         }
 
         // 4. Verificar si el profesor no tiene otra clase al mismo tiempo
         if (this.isProfessorAvailableForAssignment(assignment)) {
-            score++;
+            score += 1;
         }
 
         // 5. Verificar si los grupos de estudiantes no tienen otras clases al mismo tiempo
         if (this.areStudentGroupsAvailableForAssignment(assignment)) {
-            score++;
+            score += 1;
+        } else {
+            // Penalización severa
+            return 0;
         }
 
         // 6. Verificar si se cumple el requisito de aula específica
         if (assignment.course.requiredRoomId !== null) {
-            // Si se requiere un aula específica, verificar que se haya asignado esa aula
             if (assignment.room.id === assignment.course.requiredRoomId) {
-                // Esta es una restricción dura, por lo que penalizamos fuertemente si no se cumple
-                score++;
+                score += 1;
             } else {
-                // Penalización severa (eliminamos todos los puntos) si no se asigna el aula requerida
-                score = 0;
+                score = 0; // Penalización severa
             }
         }
 
-        // 7. Nueva restricción blanda para verificar si las clases de múltiples slots cumplen con el requisito de consecutividad
+        // 7. Restricción de slots consecutivos
         if (assignment.course.duration > 1) {
             if (assignment.course.requiresConsecutiveSlots) {
-                // Si requiere slots consecutivos, verificar que todos los slots están en el mismo día y son consecutivos
                 const slots = assignment.getAllTimeSlots();
                 const isConsecutive = slots.length === assignment.course.duration &&
                     slots.every((slot, index) =>
@@ -185,33 +192,28 @@ class Chromosome {
                             slot.hourIndex === slots[index - 1].hourIndex + 1)
                     );
 
-                // Aquí podríamos añadir puntos adicionales, o restarlos si no se cumple
-                // Por ejemplo, podríamos modificar el score final basado en esto
                 if (!isConsecutive) {
-                    score -= 0.5; // Penalización leve para esta restricción blanda
+                    score -= 0.5;
                 }
             } else {
-                // Si no requiere slots consecutivos, verificar que todos los slots están asignados
                 const hasAllSlots = assignment.secondaryTimeSlots.length === assignment.course.duration - 1;
                 if (!hasAllSlots) {
-                    score -= 0.5; // Penalización leve si faltan slots
+                    score -= 0.5;
                 }
             }
         }
 
-        // 8. NUEVO: Verificar restricción de horario para grupos específicos
+        // 8. Restricción de horario para grupos específicos
         const restrictedGroups = ["G7", "G8", "G9", "G10", "G11", "G12", "G13", "G14"];
         if (assignment.course.studentGroups.some(g => restrictedGroups.includes(g.id))) {
-            // Verificar que la hora del slot principal no sea después de las 19:00 (slots 4 y 5)
             if (assignment.timeSlot.hourIndex >= 4) {
-                score = 0; // Penalización severa (restricción dura)
+                score = 0;
             }
 
-            // También verificar los slots secundarios o consecutivos
             const allSlots = assignment.getAllTimeSlots();
             for (const slot of allSlots) {
                 if (slot.hourIndex >= 4) {
-                    score = 0; // Penalización severa (restricción dura)
+                    score = 0;
                     break;
                 }
             }
@@ -222,25 +224,33 @@ class Chromosome {
 
     // Verificar si el aula está disponible para la asignación
     isRoomAvailableForAssignment(newAssignment) {
+        // Obtener todos los slots de tiempo que ocupará la nueva asignación
         const newSlots = newAssignment.getAllTimeSlots();
 
+        // Verificar contra todas las asignaciones existentes
         for (const assignment of this.classAssignments) {
+            // Ignorar la asignación que estamos evaluando
             if (assignment === newAssignment) continue;
 
+            // Sólo verificar si es la misma aula
             if (assignment.room.id === newAssignment.room.id) {
                 const existingSlots = assignment.getAllTimeSlots();
 
-                // Verificar si hay superposición entre alguno de los slots nuevos y existentes
+                // Comprobación más explícita de la superposición
                 for (const newSlot of newSlots) {
                     for (const existingSlot of existingSlots) {
+                        // Si coincide el día y la hora, hay un conflicto
                         if (newSlot.dayIndex === existingSlot.dayIndex &&
                             newSlot.hourIndex === existingSlot.hourIndex) {
-                            return false; // Hay superposición
+                            // console.log(`Conflicto de aula detectado: ${newAssignment.course.name} y ${assignment.course.name} en aula ${assignment.room.id} en slot ${newSlot.dayIndex},${newSlot.hourIndex}`);
+                            return false; // Aula ocupada
                         }
                     }
                 }
             }
         }
+
+        // Si no encontramos conflictos, el aula está disponible
         return true;
     }
 
@@ -275,26 +285,42 @@ class Chromosome {
     }
 
     // Verificar si los grupos de estudiantes están disponibles para la asignación
+
+    // Método corregido para verificar la disponibilidad de grupos de estudiantes
+    // 1. MEJORAR EL MÉTODO DE VERIFICACIÓN DE CONFLICTOS DE GRUPOS
     areStudentGroupsAvailableForAssignment(newAssignment) {
-        const startSlot = newAssignment.timeSlot.getSlotIndex();
-        const endSlot = startSlot + newAssignment.course.duration - 1;
+        // Obtener todos los slots de tiempo que ocupará la nueva asignación
+        const newSlots = newAssignment.getAllTimeSlots();
 
+        // Para cada grupo de estudiantes en la nueva asignación
         for (const group of newAssignment.course.studentGroups) {
-            for (const assignment of this.classAssignments) {
-                if (assignment === newAssignment) continue;
+            // Buscar todas las asignaciones existentes que involucran a este grupo
+            for (const existingAssignment of this.classAssignments) {
+                // Ignorar la asignación que estamos evaluando
+                if (existingAssignment === newAssignment) continue;
 
-                // Verificar si este grupo está en otra clase
-                if (assignment.course.studentGroups.some(g => g.id === group.id)) {
-                    const otherStartSlot = assignment.timeSlot.getSlotIndex();
-                    const otherEndSlot = otherStartSlot + assignment.course.duration - 1;
+                // Verificar si este grupo está en la asignación existente
+                if (existingAssignment.course.studentGroups.some(g => g.id === group.id)) {
+                    // Obtener todos los slots que ocupa la asignación existente
+                    const existingSlots = existingAssignment.getAllTimeSlots();
 
-                    if (startSlot <= otherEndSlot && otherStartSlot <= endSlot) {
-                        return false; // El grupo ya tiene otra clase en ese tiempo
+                    // Comprobar si hay alguna superposición entre los slots
+                    for (const newSlot of newSlots) {
+                        for (const existingSlot of existingSlots) {
+                            // Si el día y la hora coinciden, hay un conflicto
+                            if (newSlot.dayIndex === existingSlot.dayIndex &&
+                                newSlot.hourIndex === existingSlot.hourIndex) {
+                                // Agregar log para verificar
+                                // console.log(`Conflicto detectado para grupo ${group.id}: ${newSlot.dayIndex},${newSlot.hourIndex}`);
+                                return false; // Conflicto encontrado
+                            }
+                        }
                     }
                 }
             }
         }
 
+        // Si llegamos aquí, no se encontraron conflictos
         return true;
     }
 }
@@ -335,32 +361,82 @@ class TimetableGenerator {
         for (let i = 0; i < this.populationSize; i++) {
             const chromosome = new Chromosome();
 
+            // Mantener un contador de uso de cada aula para mejor distribución
+            const roomUsageCount = {};
+            this.rooms.forEach(room => {
+                roomUsageCount[room.id] = 0;
+            });
+
             // Asignar cada curso a un aula y horario aleatorio
             for (const course of this.courses) {
                 let room;
 
+                // Calcular el total de estudiantes en este curso
+                const totalStudents = course.studentGroups.reduce((sum, group) => sum + group.size, 0);
+
                 // Si el curso requiere un aula específica, asignarla directamente
                 if (course.requiredRoomId !== null) {
                     room = this.rooms.find(r => r.id === course.requiredRoomId);
-                    // Si no se encuentra el aula requerida, asignar cualquier aula (pero tendrá penalización)
+                    // Si no se encuentra el aula requerida, asignar cualquier aula con capacidad suficiente
                     if (!room) {
-                        const randomRoomIndex = Math.floor(Math.random() * this.rooms.length);
-                        room = this.rooms[randomRoomIndex];
+                        const suitableRooms = this.rooms.filter(r => r.capacity >= totalStudents);
+                        if (suitableRooms.length > 0) {
+                            // Preferir las aulas menos utilizadas
+                            suitableRooms.sort((a, b) => roomUsageCount[a.id] - roomUsageCount[b.id]);
+                            room = suitableRooms[0];
+                        } else {
+                            // Si no hay aulas con capacidad suficiente, elegir la más grande
+                            room = this.rooms.reduce((largest, current) =>
+                                current.capacity > largest.capacity ? current : largest, this.rooms[0]);
+                        }
                     }
                 } else {
-                    // Si no requiere aula específica, asignar aleatoriamente
-                    const randomRoomIndex = Math.floor(Math.random() * this.rooms.length);
-                    room = this.rooms[randomRoomIndex];
+                    // MODIFICACIÓN: Distribución balanceada entre todas las aulas
+                    // Filtrar aulas con capacidad suficiente
+                    let suitableRooms = this.rooms.filter(r => r.capacity >= totalStudents);
+
+                    // Si no hay aulas con capacidad suficiente, usar todas
+                    if (suitableRooms.length === 0) {
+                        suitableRooms = this.rooms;
+                    }
+
+                    // Ordenar por uso (primero las menos utilizadas)
+                    suitableRooms.sort((a, b) => roomUsageCount[a.id] - roomUsageCount[b.id]);
+
+                    // Para cursos con múltiples grupos, considerar aulas grandes pero seguir prefiriendo las menos usadas
+                    if (course.studentGroups.length > 1 || totalStudents > 50) {
+                        // Primero intentar con aulas grandes menos utilizadas
+                        const largeRooms = suitableRooms.filter(r => r.capacity >= 100);
+                        if (largeRooms.length > 0) {
+                            // Elegir entre el 20% de las menos utilizadas para mantener variedad
+                            const candidateCount = Math.max(1, Math.ceil(largeRooms.length * 0.2));
+                            const randomIndex = Math.floor(Math.random() * candidateCount);
+                            room = largeRooms[randomIndex];
+                        } else {
+                            // Si no hay aulas grandes, elegir entre las disponibles menos utilizadas
+                            const candidateCount = Math.max(1, Math.ceil(suitableRooms.length * 0.2));
+                            const randomIndex = Math.floor(Math.random() * candidateCount);
+                            room = suitableRooms[randomIndex];
+                        }
+                    } else {
+                        // Para cursos normales, elegir entre el 30% de las menos utilizadas
+                        const candidateCount = Math.max(1, Math.ceil(suitableRooms.length * 0.3));
+                        const randomIndex = Math.floor(Math.random() * candidateCount);
+                        room = suitableRooms[randomIndex];
+                    }
                 }
 
+                // Actualizar el contador de uso para el aula seleccionada
+                roomUsageCount[room.id] = (roomUsageCount[room.id] || 0) + 1;
+
                 // Elegir un slot de tiempo aleatorio principal
-                const randomDayIndex = Math.floor(Math.random() * DAYS_OF_WEEK.length);
+                const randomDayIndex = Math.floor(Math.random() * 5); // 5 días
                 const maxHourIndex = course.requiresConsecutiveSlots ?
-                    (HOURS_PER_DAY - course.duration) :
-                    (HOURS_PER_DAY - 1);
+                    (6 - course.duration) : // 6 horas por día
+                    (6 - 1);
                 let randomHourIndex = Math.floor(Math.random() * (maxHourIndex + 1));
 
-                // AÑADIR ESTO: Restricción para grupos específicos
+                // Restricción para grupos específicos
                 const restrictedGroups = ["G7", "G8", "G9", "G10", "G11", "G12", "G13", "G14"];
                 if (course.studentGroups.some(g => restrictedGroups.includes(g.id))) {
                     // Limitar a slots antes de las 19:00 (índice < 4)
@@ -396,6 +472,14 @@ class TimetableGenerator {
 
         for (let generation = 0; generation < this.maxGenerations; generation++) {
             // Ordenar población por fitness (descendente)
+            population.sort((a, b) => b.fitness - a.fitness);
+
+            // VERIFICAR EXPLÍCITAMENTE CONFLICTOS DE AULA EN CADA GENERACIÓN
+            for (const chromosome of population) {
+                this.checkRoomConflicts(chromosome);
+            }
+
+            // Volver a ordenar después de verificar conflictos
             population.sort((a, b) => b.fitness - a.fitness);
 
             // Guardar el mejor cromosoma
@@ -451,6 +535,9 @@ class TimetableGenerator {
                 // Calcular fitness del hijo
                 child.calculateFitness();
 
+                // VERIFICAR EXPLÍCITAMENTE CONFLICTOS DE AULA EN CADA NUEVO HIJO
+                this.checkRoomConflicts(child);
+
                 // Añadir a la nueva población
                 newPopulation.push(child);
             }
@@ -459,9 +546,368 @@ class TimetableGenerator {
             population = newPopulation;
         }
 
+        // VERIFICAR UNA VEZ MÁS EL MEJOR CROMOSOMA
+        if (bestChromosome) {
+            this.checkRoomConflicts(bestChromosome);
+            bestChromosome.calculateFitness();
+
+            // Aplicar post-procesamiento para eliminar conflictos residuales
+            bestChromosome = this.postProcessSchedule(bestChromosome);
+        }
+
         return bestChromosome;
     }
+    postProcessSchedule(chromosome) {
+        // Copiar el cromosoma
+        const newChromosome = new Chromosome();
+        const processedAssignments = [];
 
+        // Ordenar asignaciones por complejidad (número de grupos, duración, etc.)
+        const sortedAssignments = [...chromosome.classAssignments];
+        sortedAssignments.sort((a, b) => {
+            // Priorizar asignaciones con más grupos
+            const groupDiff = b.course.studentGroups.length - a.course.studentGroups.length;
+            if (groupDiff !== 0) return groupDiff;
+
+            // Luego por duración (primero las más largas)
+            const durationDiff = b.course.duration - a.course.duration;
+            if (durationDiff !== 0) return durationDiff;
+
+            // Finalmente por tamaño total de estudiantes
+            const sizeA = a.course.studentGroups.reduce((sum, g) => sum + g.size, 0);
+            const sizeB = b.course.studentGroups.reduce((sum, g) => sum + g.size, 0);
+            return sizeB - sizeA;
+        });
+
+        // Primero agregar todas las asignaciones una por una, verificando que no causen conflictos
+        for (const assignment of sortedAssignments) {
+            const tempChromosome = new Chromosome();
+            for (const processed of processedAssignments) {
+                tempChromosome.addClassAssignment(processed);
+            }
+
+            // Verificar si esta asignación causa conflictos
+            const hasRoomConflict = !tempChromosome.isRoomAvailableForAssignment(assignment);
+            const hasGroupConflict = !tempChromosome.areStudentGroupsAvailableForAssignment(assignment);
+            const hasProfessorConflict = !tempChromosome.isProfessorAvailableForAssignment(assignment);
+
+            if (!hasRoomConflict && !hasGroupConflict && !hasProfessorConflict) {
+                // Si no hay conflictos, agregar la asignación tal cual
+                processedAssignments.push(assignment);
+            } else {
+                // Si hay conflictos, intentar reparar la asignación
+                const repairedAssignment = this.repairAssignment(tempChromosome, assignment);
+
+                // Verificar si la asignación reparada es válida
+                if (this.isValidAssignment(tempChromosome, repairedAssignment)) {
+                    processedAssignments.push(repairedAssignment);
+                } else {
+                    // Si no podemos repararla, registrar una advertencia
+                    console.log(`ADVERTENCIA: No se pudo reparar el conflicto para el curso ${assignment.course.name}`);
+
+                    // Como último recurso, intentamos solo cambiar el aula o el horario
+                    let fixed = false;
+
+                    // Intentar con todas las aulas disponibles
+                    for (const room of this.rooms) {
+                        const newAssignment = new ClassAssignment(
+                            assignment.course,
+                            room,
+                            assignment.timeSlot,
+                            assignment.secondaryTimeSlots
+                        );
+
+                        if (this.isValidAssignment(tempChromosome, newAssignment)) {
+                            processedAssignments.push(newAssignment);
+                            fixed = true;
+                            break;
+                        }
+                    }
+
+                    // Si no funcionó cambiar el aula, intentar con todos los horarios posibles
+                    if (!fixed) {
+                        for (let dayIndex = 0; dayIndex < 5; dayIndex++) {
+                            for (let hourIndex = 0; hourIndex < 6; hourIndex++) {
+                                const timeSlot = new TimeSlot(dayIndex, hourIndex);
+
+                                // Para clases consecutivas, verificar si hay espacio suficiente
+                                if (assignment.course.requiresConsecutiveSlots &&
+                                    assignment.course.duration > 1 &&
+                                    hourIndex + assignment.course.duration > 6) {
+                                    continue; // No hay espacio suficiente para clase consecutiva
+                                }
+
+                                // Para clases no consecutivas, generar nuevos slots secundarios
+                                let secondaryTimeSlots = [];
+                                if (!assignment.course.requiresConsecutiveSlots && assignment.course.duration > 1) {
+                                    // Esta es una simplificación; en un caso real, necesitaríamos generar slots válidos
+                                    secondaryTimeSlots = [];
+                                }
+
+                                const newAssignment = new ClassAssignment(
+                                    assignment.course,
+                                    assignment.room,
+                                    timeSlot,
+                                    secondaryTimeSlots
+                                );
+
+                                if (this.isValidAssignment(tempChromosome, newAssignment)) {
+                                    processedAssignments.push(newAssignment);
+                                    fixed = true;
+                                    break;
+                                }
+                            }
+                            if (fixed) break;
+                        }
+                    }
+
+                    // Si todavía no pudimos arreglarlo, lo omitimos (última opción)
+                    if (!fixed) {
+                        console.log(`ADVERTENCIA GRAVE: Se omitió el curso ${assignment.course.name} por conflictos irresolubles`);
+                    }
+                }
+            }
+        }
+
+        // Agregar todas las asignaciones procesadas al nuevo cromosoma
+        for (const assignment of processedAssignments) {
+            newChromosome.addClassAssignment(assignment);
+        }
+
+        // Verificar una vez más si hay conflictos
+        this.checkRoomConflicts(newChromosome);
+
+        // Recalcular el fitness
+        newChromosome.calculateFitness();
+
+        return newChromosome;
+    }
+    analyzeRoomConflicts(chromosome) {
+        console.log("\n=== ANÁLISIS DE CONFLICTOS DE AULA ===");
+
+        // Estructura para rastrear qué aula está asignada a qué slot
+        const roomAssignments = {};
+        let totalRoomConflicts = 0;
+
+        // Para cada asignación en el cromosoma
+        for (const assignment of chromosome.classAssignments) {
+            // Obtener todos los slots ocupados por esta asignación
+            const slots = assignment.getAllTimeSlots();
+            const roomId = assignment.room.id;
+
+            // Si es la primera vez que vemos esta aula, inicializar su registro
+            if (!roomAssignments[roomId]) {
+                roomAssignments[roomId] = {};
+            }
+
+            // Para cada slot ocupado por esta asignación
+            for (const slot of slots) {
+                const slotKey = `${slot.dayIndex},${slot.hourIndex}`;
+
+                // Si esta aula ya tiene una asignación en este slot, hay un conflicto
+                if (roomAssignments[roomId][slotKey]) {
+                    totalRoomConflicts++;
+                    console.log(`· CONFLICTO: Aula ${roomId} tiene asignadas las materias "${roomAssignments[roomId][slotKey].course.name}" y "${assignment.course.name}" en el slot ${DAYS_OF_WEEK[slot.dayIndex]}, ${slot.hourIndex + 15}:00`);
+                }
+
+                // Registrar esta asignación (incluso si hay conflicto, para detectar más de 2 asignaturas)
+                if (!roomAssignments[roomId][slotKey]) {
+                    roomAssignments[roomId][slotKey] = assignment;
+                } else if (!roomAssignments[roomId][slotKey].conflicts) {
+                    roomAssignments[roomId][slotKey].conflicts = [assignment];
+                } else {
+                    roomAssignments[roomId][slotKey].conflicts.push(assignment);
+                }
+            }
+        }
+
+        console.log(`\nTotal de conflictos de aula detectados: ${totalRoomConflicts}`);
+
+        // Calcular utilización de aulas
+        console.log("\nUtilización de aulas:");
+        for (const roomId in roomAssignments) {
+            const slotsOcupados = Object.keys(roomAssignments[roomId]).length;
+            const porcentajeUtilizacion = (slotsOcupados / (5 * 6) * 100).toFixed(1); // 5 días * 6 horas
+            console.log(`· Aula ${roomId}: ${slotsOcupados} slots ocupados (${porcentajeUtilizacion}% de utilización)`);
+        }
+
+        return totalRoomConflicts;
+    }
+    analyzeConstraintViolations(chromosome) {
+        console.log("\n=== ANÁLISIS DE RESTRICCIONES ===");
+
+        // 1. Capacidad de aulas
+        let capacityViolations = 0;
+        let totalCapacityViolation = 0;
+
+        for (const assignment of chromosome.classAssignments) {
+            const totalStudents = assignment.course.studentGroups.reduce((sum, group) => sum + group.size, 0);
+            if (assignment.room.capacity < totalStudents) {
+                capacityViolations++;
+                totalCapacityViolation += (totalStudents - assignment.room.capacity);
+                console.log(`  · El curso "${assignment.course.name}" con ${totalStudents} estudiantes está asignado al aula ${assignment.room.id} (capacidad ${assignment.room.capacity})`);
+                console.log(`    Grupos: ${assignment.course.studentGroups.map(g => `${g.id}:${g.size}`).join(', ')}`);
+            }
+        }
+
+        console.log(`\nViolaciones de capacidad: ${capacityViolations}/${chromosome.classAssignments.length} (${(capacityViolations / chromosome.classAssignments.length * 100).toFixed(2)}%)`);
+        if (capacityViolations > 0) {
+            console.log(`Déficit total de capacidad: ${totalCapacityViolation} asientos`);
+        }
+
+        // 2. Conflictos de horario entre grupos
+        const groupTimeConflicts = {};
+
+        for (const assignment of chromosome.classAssignments) {
+            const slots = assignment.getAllTimeSlots();
+
+            for (const group of assignment.course.studentGroups) {
+                const groupId = group.id;
+
+                if (!groupTimeConflicts[groupId]) {
+                    groupTimeConflicts[groupId] = [];
+                }
+
+                for (const slot of slots) {
+                    const slotKey = `${slot.dayIndex},${slot.hourIndex}`;
+                    const existingAssignment = groupTimeConflicts[groupId].find(a =>
+                        a.slot === slotKey && a.assignment !== assignment);
+
+                    if (existingAssignment) {
+                        console.log(`  · Conflicto para grupo ${groupId}: tiene asignado ${existingAssignment.assignment.course.name} y ${assignment.course.name} en ${slotKey}`);
+                    } else {
+                        groupTimeConflicts[groupId].push({
+                            slot: slotKey,
+                            assignment: assignment
+                        });
+                    }
+                }
+            }
+        }
+
+        // Contar conflictos únicos de horario
+        let uniqueTimeConflicts = 0;
+        const conflictsSeen = new Set();
+
+        for (const groupId in groupTimeConflicts) {
+            const slots = {};
+
+            for (const entry of groupTimeConflicts[groupId]) {
+                if (!slots[entry.slot]) {
+                    slots[entry.slot] = [];
+                }
+                slots[entry.slot].push(entry.assignment);
+            }
+
+            for (const slotKey in slots) {
+                if (slots[slotKey].length > 1) {
+                    const conflictKey = `${groupId}-${slotKey}`;
+                    if (!conflictsSeen.has(conflictKey)) {
+                        uniqueTimeConflicts++;
+                        conflictsSeen.add(conflictKey);
+                    }
+                }
+            }
+        }
+
+        console.log(`\nConflictos de horario: ${uniqueTimeConflicts}`);
+
+        // 3. Uso de las aulas grandes
+        const largeRooms = this.rooms.filter(r => r.capacity >= 100);
+        console.log(`\nUso de aulas grandes (capacidad >= 100):`);
+
+        for (const room of largeRooms) {
+            const assignments = chromosome.classAssignments.filter(a => a.room.id === room.id);
+            console.log(`  · Aula ${room.id} (capacidad ${room.capacity}):`);
+
+            if (assignments.length === 0) {
+                console.log("    No utilizada");
+            } else {
+                let totalUtilization = 0;
+                let totalHours = 0;
+
+                for (const assignment of assignments) {
+                    const slots = assignment.getAllTimeSlots();
+                    const totalStudents = assignment.course.studentGroups.reduce((sum, group) => sum + group.size, 0);
+                    const utilization = totalStudents / room.capacity;
+
+                    totalUtilization += utilization * slots.length;
+                    totalHours += slots.length;
+
+                    console.log(`    - ${assignment.course.name}: ${totalStudents} estudiantes (${(utilization * 100).toFixed(1)}% de capacidad)`);
+                }
+
+                if (totalHours > 0) {
+                    console.log(`    Utilización promedio: ${(totalUtilization / totalHours * 100).toFixed(1)}%`);
+                }
+            }
+        }
+    }
+    addRoomBalancingConstraint() {
+        this.addSoftConstraint(
+            (assignment, chromosome) => {
+                // Calcular uso actual de cada aula en este cromosoma
+                const roomUsageCount = {};
+                this.rooms.forEach(room => {
+                    roomUsageCount[room.id] = 0;
+                });
+
+                for (const a of chromosome.classAssignments) {
+                    roomUsageCount[a.room.id] = (roomUsageCount[a.room.id] || 0) + 1;
+                }
+
+                // Calcular uso promedio y desviación estándar
+                const usageValues = Object.values(roomUsageCount);
+                const averageUsage = usageValues.reduce((sum, val) => sum + val, 0) / usageValues.length;
+
+                // Calcular qué tan alejado está el uso de esta aula del promedio
+                const thisRoomUsage = roomUsageCount[assignment.room.id];
+                const deviation = Math.abs(thisRoomUsage - averageUsage) / averageUsage;
+
+                // Puntuación: 1.0 si el uso está cerca del promedio, disminuye con la desviación
+                return Math.max(0, 1 - deviation);
+            },
+            0.3, // Peso moderado
+            "Equilibrar el uso de aulas para evitar sobreutilización/subutilización"
+        );
+    }
+    checkRoomConflicts(chromosome) {
+        // Estructura para rastrear qué aula está asignada a qué slot
+        const roomAssignments = {};
+
+        // Para cada asignación en el cromosoma
+        for (const assignment of chromosome.classAssignments) {
+            // Obtener todos los slots ocupados por esta asignación
+            const slots = assignment.getAllTimeSlots();
+            const roomId = assignment.room.id;
+
+            // Si es la primera vez que vemos esta aula, inicializar su registro
+            if (!roomAssignments[roomId]) {
+                roomAssignments[roomId] = {};
+            }
+
+            // Para cada slot ocupado por esta asignación
+            for (const slot of slots) {
+                const slotKey = `${slot.dayIndex},${slot.hourIndex}`;
+
+                // Si esta aula ya tiene una asignación en este slot, hay un conflicto
+                if (roomAssignments[roomId][slotKey]) {
+                    // Encontramos un conflicto
+                    // console.log(`CONFLICTO: Aula ${roomId} tiene múltiples asignaturas en ${slotKey}`);
+
+                    // Penalizar ambas asignaciones
+                    assignment.score = 0;
+                    roomAssignments[roomId][slotKey].score = 0;
+                } else {
+                    // Registrar esta asignación
+                    roomAssignments[roomId][slotKey] = assignment;
+                }
+            }
+        }
+
+        // Recalcular el fitness después de ajustar las puntuaciones
+        chromosome.calculateFitness();
+    }
     // Selección por torneo
     tournamentSelection(population) {
         const tournamentSize = 3;
@@ -510,52 +956,76 @@ class TimetableGenerator {
 
     // Verificar si una asignación es válida en el contexto actual
     isValidAssignment(chromosome, assignment) {
-        // Verificación básica
-        const basicValidation = chromosome.isRoomAvailableForAssignment(assignment) &&
-            chromosome.isProfessorAvailableForAssignment(assignment) &&
-            chromosome.areStudentGroupsAvailableForAssignment(assignment) &&
-            this.isRoomRequirementSatisfied(assignment);
-
-        if (!basicValidation) return false;
-
-        // Verificar todas las restricciones duras personalizadas
-        for (const constraint of this.hardConstraints) {
-            if (!constraint.evaluate(assignment)) {
-                return false;
-            }
+        // Primero verificar disponibilidad de aula (RESTRICCIÓN DURA)
+        if (!chromosome.isRoomAvailableForAssignment(assignment)) {
+            return false; // Rechazar inmediatamente si el aula no está disponible
         }
 
-        // Verificar la restricción de horario para grupos específicos (para redundancia)
-        const restrictedGroups = ["G7", "G8", "G9", "G10", "G11", "G12", "G13", "G14"];
-        if (assignment.course.studentGroups.some(g => restrictedGroups.includes(g.id))) {
-            // Verificar que la hora del slot principal no sea después de las 19:00 (slots 4 y 5)
-            if (assignment.timeSlot.hourIndex >= 4) {
-                return false;
-            }
+        // Calcular el total de estudiantes en esta asignación
+        const totalStudents = assignment.course.studentGroups.reduce((sum, group) => sum + group.size, 0);
 
-            // También verificar los slots secundarios o consecutivos
-            const allSlots = assignment.getAllTimeSlots();
-            for (const slot of allSlots) {
-                if (slot.hourIndex >= 4) {
-                    return false;
-                }
-            }
+        // Verificar capacidad del aula (otra restricción dura)
+        if (assignment.room.capacity < totalStudents) {
+            return false;
         }
 
-        return true;
+        // Verificar conflictos de estudiantes 
+        if (!chromosome.areStudentGroupsAvailableForAssignment(assignment)) {
+            return false;
+        }
+
+        // Verificar disponibilidad del profesor
+        if (!chromosome.isProfessorAvailableForAssignment(assignment)) {
+            return false;
+        }
+
+        // Verificar requisito de aula específica
+        return this.isRoomRequirementSatisfied(assignment);
     }
 
     // Reparar una asignación problemática
     repairAssignment(chromosome, assignment) {
-        // Crear una nueva asignación con el mismo curso pero diferente aula/horario
         const course = assignment.course;
-        let roomsToTry = this.rooms;
+        const totalStudents = course.studentGroups.reduce((sum, group) => sum + group.size, 0);
 
-        // Si el curso requiere un aula específica, intentar primero con esa aula
+        // Calcular uso actual de cada aula en este cromosoma
+        const roomUsageCount = {};
+        this.rooms.forEach(room => {
+            roomUsageCount[room.id] = 0;
+        });
+
+        for (const existingAssignment of chromosome.classAssignments) {
+            if (existingAssignment === assignment) continue;
+            roomUsageCount[existingAssignment.room.id] = (roomUsageCount[existingAssignment.room.id] || 0) + 1;
+        }
+
+        // Filtrar aulas con capacidad suficiente
+        let roomsToTry = this.rooms.filter(r => r.capacity >= totalStudents);
+
+        // Si no hay aulas con capacidad suficiente, usar todas las aulas (aunque será penalizado)
+        if (roomsToTry.length === 0) {
+            roomsToTry = this.rooms;
+        }
+
+        // Si el curso requiere un aula específica, verificar si tiene capacidad suficiente
         if (course.requiredRoomId !== null) {
             const requiredRoom = this.rooms.find(r => r.id === course.requiredRoomId);
             if (requiredRoom) {
                 roomsToTry = [requiredRoom]; // Solo intentar con el aula requerida
+            }
+        } else {
+            // Ordenar aulas por uso (primero las menos utilizadas)
+            roomsToTry.sort((a, b) => roomUsageCount[a.id] - roomUsageCount[b.id]);
+
+            // Para cursos grupales, priorizar aulas grandes pero seguir considerando uso
+            if (course.studentGroups.length > 1) {
+                const largeRooms = roomsToTry.filter(r => r.capacity >= 100);
+                if (largeRooms.length > 0) {
+                    // Mezclar aulas grandes colocando las menos usadas primero
+                    largeRooms.sort((a, b) => roomUsageCount[a.id] - roomUsageCount[b.id]);
+                    // Poner aulas grandes al principio de la lista
+                    roomsToTry = [...largeRooms, ...roomsToTry.filter(r => r.capacity < 100)];
+                }
             }
         }
 
@@ -565,11 +1035,10 @@ class TimetableGenerator {
 
         // Intentar diferentes combinaciones hasta encontrar una válida
         for (const room of roomsToTry) {
-            for (let dayIndex = 0; dayIndex < DAYS_OF_WEEK.length; dayIndex++) {
+            for (let dayIndex = 0; dayIndex < 5; dayIndex++) {
                 // Determinar el rango de horas permitido
                 let maxPossibleHourIndex = course.requiresConsecutiveSlots ?
-                    (HOURS_PER_DAY - course.duration) :
-                    (HOURS_PER_DAY - 1);
+                    (6 - course.duration) : (6 - 1);
 
                 // Restringir el horario para grupos específicos
                 if (isRestricted) {
@@ -595,38 +1064,36 @@ class TimetableGenerator {
             }
         }
 
-        // Si no se encontró una combinación válida con el aula requerida, 
-        // y hay más aulas disponibles, intentar con otras aulas
-        if (course.requiredRoomId !== null && roomsToTry.length === 1 && this.rooms.length > 1) {
-            const otherRooms = this.rooms.filter(r => r.id !== course.requiredRoomId);
+        // Como último recurso, probar con todas las aulas ignorando el orden de uso
+        // pero aún respetando las restricciones de capacidad
+        for (const room of this.rooms) {
+            // Saltar si ya intentamos esta aula y tiene capacidad insuficiente
+            if (room.capacity < totalStudents && roomsToTry.includes(room)) continue;
 
-            for (const room of otherRooms) {
-                for (let dayIndex = 0; dayIndex < DAYS_OF_WEEK.length; dayIndex++) {
-                    const maxHourIndex = course.requiresConsecutiveSlots ?
-                        (HOURS_PER_DAY - course.duration) :
-                        (HOURS_PER_DAY - 1);
+            for (let dayIndex = 0; dayIndex < 5; dayIndex++) {
+                const maxHourIndex = course.requiresConsecutiveSlots ?
+                    (6 - course.duration) : (6 - 1);
 
-                    for (let hourIndex = 0; hourIndex <= maxHourIndex; hourIndex++) {
-                        const timeSlot = new TimeSlot(dayIndex, hourIndex);
+                const actualMaxHourIndex = isRestricted ? Math.min(maxHourIndex, 3) : maxHourIndex;
 
-                        // Para clases no consecutivas, generar slots secundarios
-                        let secondaryTimeSlots = [];
-                        if (!course.requiresConsecutiveSlots && course.duration > 1) {
-                            secondaryTimeSlots = this.generateSecondaryTimeSlots(course, timeSlot);
-                        }
+                for (let hourIndex = 0; hourIndex <= actualMaxHourIndex; hourIndex++) {
+                    const timeSlot = new TimeSlot(dayIndex, hourIndex);
 
-                        const newAssignment = new ClassAssignment(course, room, timeSlot, secondaryTimeSlots);
+                    let secondaryTimeSlots = [];
+                    if (!course.requiresConsecutiveSlots && course.duration > 1) {
+                        secondaryTimeSlots = this.generateSecondaryTimeSlots(course, timeSlot, isRestricted);
+                    }
 
-                        if (this.isValidAssignment(chromosome, newAssignment)) {
-                            return newAssignment;
-                        }
+                    const newAssignment = new ClassAssignment(course, room, timeSlot, secondaryTimeSlots);
+
+                    if (this.isValidAssignment(chromosome, newAssignment)) {
+                        return newAssignment;
                     }
                 }
             }
         }
 
-        // Si no se encuentra una combinación válida, devolver la original
-        // (esto podría crear un horario inválido, pero es mejor que un error)
+        // Como último recurso, devolver la asignación original
         return assignment;
     }
     isRoomRequirementSatisfied(assignment) {
@@ -654,31 +1121,65 @@ class TimetableGenerator {
         const assignment = chromosome.classAssignments[randomIndex];
         const course = assignment.course;
 
-        // Determinar qué mutar (aula o horario)
+        // Contar uso de aulas en este cromosoma
+        const roomUsageCount = {};
+        this.rooms.forEach(room => {
+            roomUsageCount[room.id] = 0;
+        });
+
+        for (const a of chromosome.classAssignments) {
+            if (a === assignment) continue; // No contar la asignación que vamos a mutar
+            roomUsageCount[a.room.id] = (roomUsageCount[a.room.id] || 0) + 1;
+        }
+
+        // Determinar qué mutar con mayor probabilidad para aulas sobreutilizadas
         let mutationType;
+
+        // Calcular uso promedio
+        const usageValues = Object.values(roomUsageCount);
+        const averageUsage = usageValues.reduce((sum, val) => sum + val, 0) / usageValues.length;
+
+        // Si el aula está sobreutilizada, mayor probabilidad de mutar el aula
+        const currentRoomUsage = roomUsageCount[assignment.room.id] || 0;
+        const isOverused = currentRoomUsage > averageUsage * 1.2; // 20% más que el promedio
 
         // Si el curso requiere un aula específica, solo mutamos el horario
         if (course.requiredRoomId !== null) {
             mutationType = 'timeSlot';
+        } else if (isOverused) {
+            // Si el aula está sobreutilizada, 80% de probabilidad de cambiar el aula
+            mutationType = Math.random() < 0.8 ? 'room' : 'timeSlot';
         } else {
-            // Si no hay requisito específico, mutamos aleatoriamente aula o horario
+            // Caso normal: 50% probabilidad
             mutationType = Math.random() < 0.5 ? 'room' : 'timeSlot';
         }
 
         if (mutationType === 'room' && !course.requiredRoomId) {
-            // Cambiar el aula solo si no hay requisito específico
-            const randomRoomIndex = Math.floor(Math.random() * this.rooms.length);
-            const newRoom = this.rooms[randomRoomIndex];
+            // Encontrar aulas menos utilizadas con capacidad suficiente
+            const totalStudents = course.studentGroups.reduce((sum, group) => sum + group.size, 0);
+            let candidateRooms = this.rooms.filter(r => r.capacity >= totalStudents);
+
+            if (candidateRooms.length === 0) {
+                candidateRooms = this.rooms; // Si no hay opciones, usar todas
+            }
+
+            // Ordenar por uso (menor a mayor)
+            candidateRooms.sort((a, b) => (roomUsageCount[a.id] || 0) - (roomUsageCount[b.id] || 0));
+
+            // Seleccionar un aula de entre el 30% menos utilizado
+            const candidateCount = Math.max(1, Math.ceil(candidateRooms.length * 0.3));
+            const randomRoomIndex = Math.floor(Math.random() * candidateCount);
+            const newRoom = candidateRooms[randomRoomIndex];
+
             assignment.room = newRoom;
         } else {
             // Cambiar el horario
-            const randomDayIndex = Math.floor(Math.random() * DAYS_OF_WEEK.length);
+            const randomDayIndex = Math.floor(Math.random() * 5);
             const maxHourIndex = course.requiresConsecutiveSlots ?
-                (HOURS_PER_DAY - course.duration) :
-                (HOURS_PER_DAY - 1);
+                (6 - course.duration) : (6 - 1);
             let randomHourIndex = Math.floor(Math.random() * (maxHourIndex + 1));
 
-            // AÑADIR ESTO: Restricción para grupos específicos
+            // Restricción para grupos específicos
             const restrictedGroups = ["G7", "G8", "G9", "G10", "G11", "G12", "G13", "G14"];
             if (course.studentGroups.some(g => restrictedGroups.includes(g.id))) {
                 // Limitar a slots antes de las 19:00 (índice < 4)
@@ -690,12 +1191,92 @@ class TimetableGenerator {
 
             // Para clases no consecutivas, generar nuevos slots secundarios
             if (!course.requiresConsecutiveSlots && course.duration > 1) {
-                const newSecondaryTimeSlots = this.generateSecondaryTimeSlots(course, newTimeSlot);
+                const isRestricted = course.studentGroups.some(g => restrictedGroups.includes(g.id));
+                const newSecondaryTimeSlots = this.generateSecondaryTimeSlots(course, newTimeSlot, isRestricted);
                 assignment.secondaryTimeSlots = newSecondaryTimeSlots;
             }
 
             assignment.timeSlot = newTimeSlot;
         }
+    }
+    analyzeRoomDistribution(chromosome) {
+        console.log("\n=== DISTRIBUCIÓN DE USO DE AULAS ===");
+
+        // Contar asignaciones por aula
+        const roomAssignments = {};
+        const roomTimeUsage = {}; // Para contar horas de uso total
+
+        // Inicializar contadores
+        this.rooms.forEach(room => {
+            roomAssignments[room.id] = [];
+            roomTimeUsage[room.id] = 0;
+        });
+
+        // Contar asignaciones y slots utilizados
+        for (const assignment of chromosome.classAssignments) {
+            const roomId = assignment.room.id;
+
+            // Si no existe la entrada para esta aula, inicializarla
+            if (!roomAssignments[roomId]) {
+                roomAssignments[roomId] = [];
+            }
+
+            // Añadir la asignación
+            roomAssignments[roomId].push(assignment);
+
+            // Contar slots utilizados
+            roomTimeUsage[roomId] += assignment.getAllTimeSlots().length;
+        }
+
+        // Estadísticas generales
+        const totalSlots = 5 * 6; // 5 días x 6 horas/día
+        let totalRoomHours = 0;
+        let maxUsage = 0;
+        let minUsage = totalSlots;
+
+        // Ordenar aulas por uso (de mayor a menor)
+        const sortedRooms = [...this.rooms].sort((a, b) =>
+            (roomTimeUsage[b.id] || 0) - (roomTimeUsage[a.id] || 0)
+        );
+
+        // Mostrar uso de cada aula
+        console.log("Uso de aulas (ordenadas por utilización):");
+        console.log("| Aula    | Capacidad | Asignaciones | Horas de uso | % Utilización |");
+        console.log("|---------|-----------|--------------|--------------|---------------|");
+
+        for (const room of sortedRooms) {
+            const roomId = room.id;
+            const assignments = roomAssignments[roomId] || [];
+            const hoursUsed = roomTimeUsage[roomId] || 0;
+            const utilization = (hoursUsed / totalSlots * 100).toFixed(1);
+
+            console.log(`| ${roomId.padEnd(7)} | ${room.capacity.toString().padEnd(9)} | ${assignments.length.toString().padEnd(12)} | ${hoursUsed.toString().padEnd(12)} | ${utilization.toString().padEnd(13)}% |`);
+
+            totalRoomHours += hoursUsed;
+            maxUsage = Math.max(maxUsage, hoursUsed);
+            minUsage = Math.min(minUsage, hoursUsed);
+        }
+
+        // Calcular estadísticas
+        const avgUsage = totalRoomHours / this.rooms.length;
+        const usageDeviation = maxUsage - minUsage;
+        const utilizationPercentage = (totalRoomHours / (this.rooms.length * totalSlots) * 100).toFixed(1);
+
+        console.log("\nEstadísticas de utilización:");
+        console.log(`· Promedio de horas por aula: ${avgUsage.toFixed(1)}`);
+        console.log(`· Diferencia entre máx y mín: ${usageDeviation} horas`);
+        console.log(`· Coeficiente de variación: ${(usageDeviation / avgUsage).toFixed(2)}`);
+        console.log(`· Utilización total de aulas: ${utilizationPercentage}%`);
+
+        // Aulas sin uso
+        const unusedRooms = sortedRooms.filter(room => (roomTimeUsage[room.id] || 0) === 0);
+        if (unusedRooms.length > 0) {
+            console.log(`\n⚠️ Aulas sin utilizar (${unusedRooms.length}): ${unusedRooms.map(r => r.id).join(', ')}`);
+        } else {
+            console.log("\n✅ Todas las aulas tienen al menos una asignación");
+        }
+
+        return unusedRooms.length;
     }
     generateSecondaryTimeSlots(course, mainTimeSlot, isRestricted = false) {
         if (course.requiresConsecutiveSlots || course.duration <= 1) {
@@ -774,13 +1355,37 @@ class TimetableGenerator {
         console.log("\n===== HORARIO GENERADO =====");
         console.log(`Fitness: ${chromosome.fitness.toFixed(4)}`);
 
+        // Análisis de restricciones generales
+        this.analyzeConstraintViolations(chromosome);
+
+        // Análisis específico de conflictos de aula
+        const roomConflicts = this.analyzeRoomConflicts(chromosome);
+
+        // Análisis de distribución de aulas
+        const unusedRooms = this.analyzeRoomDistribution(chromosome);
+
+        // Mensaje final sobre calidad del horario
+        if (roomConflicts === 0) {
+            console.log("\n✅ EL HORARIO NO TIENE CONFLICTOS DE AULA");
+        } else {
+            console.log(`\n❌ EL HORARIO TIENE ${roomConflicts} CONFLICTOS DE AULA`);
+        }
+
+        if (unusedRooms === 0) {
+            console.log("✅ TODAS LAS AULAS ESTÁN SIENDO UTILIZADAS");
+        } else {
+            console.log(`⚠️ HAY ${unusedRooms} AULAS SIN UTILIZAR`);
+        }
+
+        // Resto del método igual que antes...
         // Estructura para almacenar el horario en formato JSON
         const timetableJSON = {};
 
         // Inicializar la estructura JSON con todos los días y horas
+        const DAYS_OF_WEEK = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
         DAYS_OF_WEEK.forEach(day => {
             timetableJSON[day] = {};
-            for (let hour = 0; hour < HOURS_PER_DAY; hour++) {
+            for (let hour = 0; hour < 6; hour++) {
                 timetableJSON[day][hour] = [];
             }
         });
@@ -800,7 +1405,7 @@ class TimetableGenerator {
             else if (assignment.course.requiresConsecutiveSlots && assignment.course.duration > 1) {
                 for (let i = 1; i < assignment.course.duration; i++) {
                     const hourIndex = assignment.timeSlot.hourIndex + i;
-                    if (hourIndex < HOURS_PER_DAY) {
+                    if (hourIndex < 6) { // 6 horas por día
                         const continuationSlot = new TimeSlot(assignment.timeSlot.dayIndex, hourIndex);
                         this.addAssignmentToJSON(timetableJSON, assignment, continuationSlot, true);
                     }
@@ -816,9 +1421,9 @@ class TimetableGenerator {
         console.log("=====================================");
 
         // Intentar guardar el archivo si estamos en Node.js
-        if (fs) {
+        if (typeof require !== 'undefined' && require('fs')) {
             try {
-                fs.writeFileSync('horario-data.json', jsonOutput, 'utf8');
+                require('fs').writeFileSync('horario-data.json', jsonOutput, 'utf8');
                 console.log("Archivo 'horario-data.json' guardado en el directorio actual.");
             } catch (error) {
                 console.error("Error al guardar el archivo 'horario-data.json':", error);
@@ -827,22 +1432,32 @@ class TimetableGenerator {
             console.log("Guardado de archivo no disponible en este entorno (requiere Node.js). Copia la salida JSON de arriba.");
         }
     }
+
     // 9. Modificar el método printTimetable para incluir información sobre aulas específicas
     addAssignmentToJSON(timetableJSON, assignment, slot, isContinuation) {
-        const dayName = DAYS_OF_WEEK[slot.dayIndex];
+        const dayName = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"][slot.dayIndex];
         const hour = slot.hourIndex;
+
+        // Calcular total de estudiantes
+        const totalStudents = assignment.course.studentGroups.reduce((sum, group) => sum + group.size, 0);
+        const capacityUtilization = (totalStudents / assignment.room.capacity * 100).toFixed(1);
+        const hasCapacityIssue = totalStudents > assignment.room.capacity;
 
         // Crear la entrada para el horario
         const entry = {
             course: assignment.course.name,
             professor: assignment.course.professor.name,
             room: assignment.room.id,
-            groups: assignment.course.studentGroups.map(g => g.name).join(', '),
+            roomCapacity: assignment.room.capacity,
+            totalStudents: totalStudents,
+            capacityUtilization: `${capacityUtilization}%`,
+            capacityIssue: hasCapacityIssue,
+            groups: assignment.course.studentGroups.map(g => `${g.name}(${g.size})`).join(', '),
             duration: assignment.course.duration,
             requiresComputers: assignment.course.requiresComputers,
             requiresConsecutiveSlots: assignment.course.requiresConsecutiveSlots,
-            requiredRoomId: assignment.course.requiredRoomId, // Añadir información de aula requerida
-            roomRequirementSatisfied: this.isRoomRequirementSatisfied(assignment), // Indicar si se cumple
+            requiredRoomId: assignment.course.requiredRoomId,
+            roomRequirementSatisfied: this.isRoomRequirementSatisfied(assignment),
             continuation: isContinuation,
             score: assignment.score
         };
@@ -918,12 +1533,12 @@ function runExample() {
         new Professor("P29", "4-5 profesores")
     ];
 
-    // Establecer algunas restricciones de disponibilidad para los profesores
-    professors[0].setAvailability(0, 0, false); // El Prof. Juan Oscar no está disponible los lunes a primera hora
-    professors[1].setAvailability(4, 8, false); // El Prof. Daniel Condori no está disponible los viernes a última hora
-    professors[2].setAvailability(2, 3, false); // El Prof. Ivan Katery no está disponible los miércoles a la cuarta hora
-    professors[3].setAvailability(1, 7, false); // La Prof. Cecilia Padilla no está disponible los martes a la octava hora
-    professors[4].setAvailability(3, 0, false); // El Prof. David Gonzales no está disponible los jueves a primera hora
+    // // Establecer algunas restricciones de disponibilidad para los profesores
+    // professors[0].setAvailability(0, 0, false); // El Prof. Juan Oscar no está disponible los lunes a primera hora
+    // professors[1].setAvailability(4, 8, false); // El Prof. Daniel Condori no está disponible los viernes a última hora
+    // professors[2].setAvailability(2, 3, false); // El Prof. Ivan Katery no está disponible los miércoles a la cuarta hora
+    // professors[3].setAvailability(1, 7, false); // La Prof. Cecilia Padilla no está disponible los martes a la octava hora
+    // professors[4].setAvailability(3, 0, false); // El Prof. David Gonzales no está disponible los jueves a primera hora
 
     // Crear grupos de estudiantes
     const studentGroups = [
@@ -1118,6 +1733,22 @@ function runExample() {
         },
         "No clases después de las 19:00 para los grupos de iniciación y básico"
     );
+    generator.addHardConstraint(
+        (assignment) => {
+            // Esta restricción será verificada por el método areStudentGroupsAvailableForAssignment
+            // por lo que simplemente devolvemos true aquí, ya que la verificación principal
+            // se realiza en el método anterior
+            return true;
+        },
+        "Un grupo no puede tener dos asignaturas a la misma hora"
+    );
+    generator.addHardConstraint(
+        (assignment) => {
+            const totalStudents = assignment.course.studentGroups.reduce((sum, group) => sum + group.size, 0);
+            return assignment.room.capacity >= totalStudents;
+        },
+        "El aula debe tener capacidad suficiente para todos los estudiantes"
+    );
     // Añadir restricción blanda personalizada (preferir aulas con mayor capacidad)
     generator.addSoftConstraint(
         (assignment) => {
@@ -1131,6 +1762,7 @@ function runExample() {
         0.5, // Peso
         "Preferir aulas con capacidad ajustada al número de estudiantes"
     );
+    generator.addRoomBalancingConstraint();
 
     // Generar horario
     console.log("Generando horario...");
