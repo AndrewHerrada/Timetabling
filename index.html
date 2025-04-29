@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Algoritmo Genético</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
+</head>
+
+<body>
+    <div class="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <header>
+        <div class="container">
+            <h1>Dashboard de Análisis Evolutivo</h1>
+            <p>Visualización y análisis del comportamiento del algoritmo genético</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="file-upload-container">
+            <h3>Cargar datos evolutivos</h3>
+            <p>Cargue el archivo JSON de evolución generado por el algoritmo genético o pegue el contenido JSON
+                directamente</p>
+
+            <div class="alert alert-success" id="success-alert">
+                Los datos se han cargado correctamente. Visualizando resultados...
+            </div>
+
+            <div class="alert alert-danger" id="error-alert">
+                Ocurrió un error al procesar los datos. Asegúrese de que el formato JSON sea correcto.
+            </div>
+
+            <div class="file-input-wrapper">
+                <label class="file-input-label">
+                    Seleccionar archivo JSON
+                    <input type="file" class="file-input" id="file-input" accept=".json">
+                </label>
+            </div>
+            <div class="file-name-display" id="file-name-display">Ningún archivo seleccionado</div>
+
+            <div class="or-divider">O</div>
+
+            <div class="paste-area-container">
+                <textarea class="paste-area" id="json-paste-area"
+                    placeholder="Pegue aquí el contenido JSON generado por el algoritmo evolutivo..."></textarea>
+                <button class="btn" id="process-json-btn">Procesar datos JSON</button>
+            </div>
+        </div>
+
+        <div id="main-content" style="display: none;">
+            <div class="tab-container">
+                <ul class="tabs">
+                    <li class="tab-item active" data-tab="fitness-tab">Evolución del Fitness</li>
+                    <li class="tab-item" data-tab="diversity-tab">Diversidad Genética</li>
+                    <li class="tab-item" data-tab="operators-tab">Operadores Genéticos</li>
+                    <li class="tab-item" data-tab="constraints-tab">Restricciones</li>
+                    <li class="tab-item" data-tab="convergence-tab">Convergencia</li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- Tab 1: Evolución del Fitness -->
+                    <div class="tab-pane active" id="fitness-tab">
+                        <div class="stats-container">
+                            <div class="stat-card">
+                                <div class="stat-label">Fitness Final</div>
+                                <div class="stat-value color-primary" id="final-fitness">-</div>
+                                <div class="stat-label">Mejor solución encontrada</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Generaciones</div>
+                                <div class="stat-value color-info" id="total-generations">-</div>
+                                <div class="stat-label">Total ejecutadas</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Mejora Total</div>
+                                <div class="stat-value color-success" id="fitness-improvement">-</div>
+                                <div class="stat-label">Desde la generación inicial</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Tiempo de Convergencia</div>
+                                <div class="stat-value color-warning" id="convergence-generation">-</div>
+                                <div class="stat-label">Generación de estabilización</div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard">
+                            <div class="chart-container large-chart">
+                                <div class="chart-header">
+                                    <div class="chart-title">Evolución del Fitness a lo largo de las Generaciones</div>
+                                </div>
+                                <canvas id="fitnessEvolutionChart"></canvas>
+                            </div>
+
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <div class="chart-title">Mejora Relativa del Fitness por Generación</div>
+                                </div>
+                                <canvas id="fitnessImprovementChart"></canvas>
+                            </div>
+
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <div class="chart-title">Distribución del Fitness en la Población Final</div>
+                                </div>
+                                <canvas id="fitnessFinalDistributionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: Diversidad Genética -->
+                    <div class="tab-pane" id="diversity-tab">
+                        <div class="dashboard">
+                            <div class="chart-container large-chart">
+                                <div class="chart-header">
+                                    <div class="chart-title">Diversidad Genética a lo largo de las Generaciones</div>
+                                </div>
+                                <canvas id="diversityEvolutionChart"></canvas>
+                            </div>
+
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <div class="chart-title">Diversidad vs. Fitness Promedio</div>
+                                </div>
+                                <canvas id="diversityVsFitnessChart"></canvas>
+                            </div>
+
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <div class="chart-title">Efecto de la Diversidad en la Convergencia</div>
+                                </div>
+                                <canvas id="diversityImpactChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 3: Operadores Genéticos -->
+                    <div class="tab-pane" id="operators-tab">
+                        <div class="dashboard">
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <div class="chart-title">Tasa de Éxito del Cruzamiento</div>
+                                </div>
+                                <canvas id="crossoverSuccessChart"></canvas>
+                            </div>
+
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <div class="chart-title">Tasa de Éxito de la Mutación</div>
+                                </div>
+                                <canvas id="mutationSuccessChart"></canvas>
+                            </div>
+
+                            <div class="chart-container large-chart">
+                                <div class="chart-header">
+                                    <div class="chart-title">Comparación de Operadores Genéticos</div>
+                                </div>
+                                <canvas id="operatorsComparisonChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 4: Restricciones -->
+                    <div class="tab-pane" id="constraints-tab">
+                        <div class="progress-container">
+                            <h3>Cumplimiento de Restricciones (Solución Final)</h3>
+                            <div id="constraints-final-container">
+                                <!-- Las barras de progreso se generarán dinámicamente -->
+                            </div>
+                        </div>
+
+                        <div class="dashboard">
+                            <div class="chart-container large-chart">
+                                <div class="chart-header">
+                                    <div class="chart-title">Evolución del Cumplimiento de Restricciones</div>
+                                </div>
+                                <canvas id="constraintsEvolutionChart"></canvas>
+                            </div>
+
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <div class="chart-title">Restricciones más Difíciles de Satisfacer</div>
+                                </div>
+                                <canvas id="hardestConstraintsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 5: Convergencia -->
+                    <div class="tab-pane" id="convergence-tab">
+                        <div class="dashboard">
+                            <div class="chart-container large-chart">
+                                <div class="chart-header">
+                                    <div class="chart-title">Periodos de Estancamiento</div>
+                                </div>
+                                <canvas id="stagnationPeriodsChart"></canvas>
+                            </div>
+
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <div class="chart-title">Tasas de Mejora a lo largo del Tiempo</div>
+                                </div>
+                                <canvas id="improvementRatesChart"></canvas>
+                            </div>
+
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <div class="chart-title">Velocidad de Convergencia</div>
+                                </div>
+                                <canvas id="convergenceSpeedChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="compact-table-container">
+                            <h3>Periodos Significativos de Estancamiento</h3>
+                            <table id="stagnationTable" class="compact-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Inicio</th>
+                                        <th>Fin</th>
+                                        <th>Duración</th>
+                                        <th>Fitness</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Rows will be added by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>Dashboard de Análisis Evolutivo © 2025 | Desarrollado para visualización de algoritmos genéticos</p>
+        </div>
+    </footer>
+
+    <script src="scripts.js"></script>
+</body>
+
+</html>
