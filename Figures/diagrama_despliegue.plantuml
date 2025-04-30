@@ -1,0 +1,102 @@
+@startuml Diagrama Despliegue Sistema de Timetabling
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.4.0
+!include ICONURL/common.puml
+!include ICONURL/devicons/python.puml
+!include ICONURL/devicons/javascript.puml
+!include ICONURL/font-awesome/database.puml
+!include ICONURL/font-awesome/file.puml
+!include ICONURL/font-awesome/gears.puml
+
+skinparam backgroundColor white
+skinparam linetype ortho
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam componentBorderColor #888888
+skinparam componentBorderThickness 2
+skinparam databaseBorderColor #888888
+skinparam arrowColor #5D8AA8
+skinparam stereotypeCBackgroundColor #A9DCDF
+
+skinparam component {
+  FontName "Roboto"
+  FontSize 14
+  BorderRadius 8
+  BackgroundColor #E9F5F8
+  ArrowColor #225EA8
+}
+
+skinparam database {
+  FontName "Roboto"
+  FontSize 14
+  BorderRadius 8
+  BackgroundColor #FFF0E0
+}
+
+skinparam artifact {
+  FontName "Roboto"
+  FontSize 12
+  BackgroundColor white
+  BorderRadius 4
+}
+
+node "Sistema de Timetabling" as SystemNode {
+  component "<$python>\nTablas.ipynb" as NotebookComponent {
+    artifact "Procesamiento y\nExtracción de Datos" as DataExtraction
+  }
+  
+  component "<$javascript>\ndashboard.js" as Dashboard {
+    artifact "<$gears>\nAlgoritmo Genético" as Algorithm
+    artifact "Procesamiento de Datos" as DataProcessing
+    artifact "Generación de Horarios" as ScheduleGeneration
+  }
+  
+  component "Visualización" as VisualizationNode {
+    artifact "index.html" as IndexHTML
+    artifact "scripts.js" as Scripts
+    artifact "styles.css" as Styles
+    artifact "horario.html" as HorarioHTML
+  }
+  
+  database "<$database>\nCarpeta /db" as DatabaseFiles {
+    artifact "Datos iniciales" as RawData
+  }
+  
+  database "<$file>\nArchivos de Datos" as DataFiles {
+    artifact "courses.txt" as Courses
+    artifact "rooms.txt" as Rooms
+    artifact "professors.txt" as Professors
+    artifact "student_groups.txt" as StudentGroups
+  }
+  
+  database "<$file>\nArchivos Generados" as GeneratedFiles {
+    artifact "evolucion-data.json" as EvolutionData
+    artifact "horario-data.json" as ScheduleData
+  }
+}
+
+' Relaciones para Tablas.ipynb con mejor estilo visual
+RawData --> NotebookComponent
+NotebookComponent --> Courses
+NotebookComponent --> Rooms
+NotebookComponent --> Professors
+NotebookComponent --> StudentGroups
+
+' Relaciones entre componentes existentes
+Courses --> Dashboard
+Rooms --> Dashboard
+Professors --> Dashboard
+StudentGroups --> Dashboard
+
+Dashboard --> EvolutionData
+Dashboard --> ScheduleData
+
+EvolutionData --> IndexHTML
+ScheduleData --> HorarioHTML
+
+IndexHTML ..> Scripts
+IndexHTML ..> Styles
+HorarioHTML ..> Styles
+
+DataProcessing ..> Algorithm
+Algorithm ..> ScheduleGeneration
+@enduml
