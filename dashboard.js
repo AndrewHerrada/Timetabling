@@ -1392,8 +1392,6 @@ class TimetableGenerator {
     // Operador de mutación
     mutate(chromosome) {
         const preFITNESS = chromosome.fitness;
-
-        // Código de mutación existente...
         // Elegir una asignación aleatoria para mutar
         const randomIndex = Math.floor(Math.random() * chromosome.classAssignments.length);
         const assignment = chromosome.classAssignments[randomIndex];
