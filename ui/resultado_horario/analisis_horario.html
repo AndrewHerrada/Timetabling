@@ -590,6 +590,223 @@
     </footer>
 
     <script>
+        function processConstraintsFromNewFormat(timetableJSON) {
+            const constraintsAnalysis = {
+                // Contadores para cada tipo de restricción
+                aulaDisponible: { total: 0, fulfilled: 0 },
+                computadorasOK: { total: 0, fulfilled: 0 },
+                capacidadSuficiente: { total: 0, fulfilled: 0 },
+                profesorDisponible: { total: 0, fulfilled: 0 },
+                gruposDisponibles: { total: 0, fulfilled: 0 },
+                aulaCorrecta: { total: 0, fulfilled: 0 },
+                slotsConsecutivosOK: { total: 0, fulfilled: 0 },
+                horarioPermitido: { total: 0, fulfilled: 0 },
+
+                // Contadores para violaciones específicas
+                violationsCount: {},
+                totalViolations: 0,
+                totalAssignments: 0,
+                assignmentsWithViolations: 0
+            };
+
+            // Procesar cada asignación en el horario
+            for (const day in timetableJSON) {
+                for (const hour in timetableJSON[day]) {
+                    const assignments = timetableJSON[day][hour];
+
+                    for (const assignment of assignments) {
+                        // Solo procesar asignaciones principales (no continuaciones)
+                        if (assignment.continuation) continue;
+
+                        constraintsAnalysis.totalAssignments++;
+
+                        // Procesar constraintStatus si existe
+                        if (assignment.constraintStatus) {
+                            Object.entries(assignment.constraintStatus).forEach(([constraint, status]) => {
+                                if (constraintsAnalysis[constraint]) {
+                                    constraintsAnalysis[constraint].total++;
+                                    if (status === true) {
+                                        constraintsAnalysis[constraint].fulfilled++;
+                                    }
+                                }
+                            });
+                        }
+
+                        // Procesar violatedConstraints si existe
+                        if (assignment.violatedConstraints && assignment.violatedConstraints.length > 0) {
+                            constraintsAnalysis.assignmentsWithViolations++;
+                            constraintsAnalysis.totalViolations += assignment.violatedConstraints.length;
+
+                            // Contar cada tipo de violación
+                            assignment.violatedConstraints.forEach(violation => {
+                                if (!constraintsAnalysis.violationsCount[violation]) {
+                                    constraintsAnalysis.violationsCount[violation] = 0;
+                                }
+                                constraintsAnalysis.violationsCount[violation]++;
+                            });
+                        }
+
+                        // Fallback: si no hay constraintStatus, inferir desde otros campos
+                        if (!assignment.constraintStatus) {
+                            // Capacidad suficiente
+                            constraintsAnalysis.capacidadSuficiente.total++;
+                            if (!assignment.capacityIssue) {
+                                constraintsAnalysis.capacidadSuficiente.fulfilled++;
+                            }
+
+                            // Aula correcta
+                            if (assignment.requiredRoomId !== null) {
+                                constraintsAnalysis.aulaCorrecta.total++;
+                                if (assignment.roomRequirementSatisfied) {
+                                    constraintsAnalysis.aulaCorrecta.fulfilled++;
+                                }
+                            }
+
+                            // Computadoras OK
+                            if (assignment.requiresComputers) {
+                                constraintsAnalysis.computadorasOK.total++;
+                                // Asumir que está cumplido si no hay violación específica
+                                if (!assignment.violatedConstraints ||
+                                    !assignment.violatedConstraints.includes('FALTA_COMPUTADORAS')) {
+                                    constraintsAnalysis.computadorasOK.fulfilled++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return constraintsAnalysis;
+        }
+
+        // Función para crear la visualización de restricciones actualizada
+        function createConstraintsVisualization(constraintsData) {
+            const constraintsContainer = document.getElementById('constraints-progress-container');
+            constraintsContainer.innerHTML = '';
+
+            // Mapeo de nombres técnicos a nombres legibles
+            const constraintNames = {
+                'aulaDisponible': 'Disponibilidad de Aulas',
+                'computadorasOK': 'Requisitos de Computadoras',
+                'capacidadSuficiente': 'Capacidad Suficiente',
+                'profesorDisponible': 'Disponibilidad de Profesores',
+                'gruposDisponibles': 'Disponibilidad de Grupos',
+                'aulaCorrecta': 'Aulas Específicas Requeridas',
+                'slotsConsecutivosOK': 'Slots Consecutivos',
+                'horarioPermitido': 'Restricciones de Horario'
+            };
+
+            // Crear barras de progreso para cada restricción
+            Object.entries(constraintNames).forEach(([key, displayName]) => {
+                const constraint = constraintsData[key];
+                if (constraint && constraint.total > 0) {
+                    const percentage = ((constraint.fulfilled / constraint.total) * 100).toFixed(1);
+
+                    const progressItem = document.createElement('div');
+                    progressItem.className = 'progress-item';
+
+                    let barClass = 'danger';
+                    if (percentage >= 95) barClass = 'success';
+                    else if (percentage >= 80) barClass = 'warning';
+                    else if (percentage >= 60) barClass = 'info';
+
+                    progressItem.innerHTML = `
+                <div class="progress-header">
+                    <span class="progress-label">${displayName}</span>
+                    <span class="progress-value">${percentage}% (${constraint.fulfilled}/${constraint.total})</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar ${barClass}" style="width: ${percentage}%;"></div>
+                </div>
+            `;
+
+                    constraintsContainer.appendChild(progressItem);
+                }
+            });
+
+            // Agregar sección de violaciones más comunes si existen
+            if (Object.keys(constraintsData.violationsCount).length > 0) {
+                const violationsSection = document.createElement('div');
+                violationsSection.style.marginTop = '30px';
+                violationsSection.innerHTML = '<h4 style="color: #e74c3c; margin-bottom: 15px;">🚫 Violaciones Más Frecuentes</h4>';
+
+                // Ordenar violaciones por frecuencia
+                const sortedViolations = Object.entries(constraintsData.violationsCount)
+                    .sort(([, a], [, b]) => b - a)
+                    .slice(0, 5); // Top 5 violaciones
+
+                // Mapeo de códigos de violación a descripciones
+                const violationNames = {
+                    'CONFLICTO_AULA': 'Conflictos de Aula',
+                    'FALTA_COMPUTADORAS': 'Falta de Computadoras',
+                    'CAPACIDAD_INSUFICIENTE': 'Capacidad Insuficiente',
+                    'CONFLICTO_PROFESOR': 'Conflictos de Profesor',
+                    'CONFLICTO_GRUPOS': 'Conflictos de Grupos',
+                    'AULA_INCORRECTA': 'Aula Incorrecta',
+                    'SLOTS_NO_CONSECUTIVOS': 'Slots No Consecutivos',
+                    'SLOTS_SECUNDARIOS_FALTANTES': 'Slots Secundarios Faltantes',
+                    'HORARIO_RESTRINGIDO_VIOLADO': 'Horario Restringido Violado'
+                };
+
+                sortedViolations.forEach(([violationType, count]) => {
+                    const displayName = violationNames[violationType] || violationType;
+                    const percentage = ((count / constraintsData.totalAssignments) * 100).toFixed(1);
+
+                    const violationItem = document.createElement('div');
+                    violationItem.className = 'progress-item';
+
+                    violationItem.innerHTML = `
+                <div class="progress-header">
+                    <span class="progress-label">${displayName}</span>
+                    <span class="progress-value" style="color: #e74c3c;">${count} casos (${percentage}% del total)</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar danger" style="width: ${Math.min(percentage * 2, 100)}%;"></div>
+                </div>
+            `;
+
+                    violationsSection.appendChild(violationItem);
+                });
+
+                constraintsContainer.appendChild(violationsSection);
+            }
+
+            // Agregar resumen general
+            const summarySection = document.createElement('div');
+            summarySection.style.marginTop = '30px';
+            summarySection.style.padding = '15px';
+            summarySection.style.backgroundColor = '#f8f9fa';
+            summarySection.style.borderRadius = '8px';
+            summarySection.style.border = '1px solid #dee2e6';
+
+            const successRate = constraintsData.totalAssignments > 0
+                ? (((constraintsData.totalAssignments - constraintsData.assignmentsWithViolations) / constraintsData.totalAssignments) * 100).toFixed(1)
+                : 0;
+
+            summarySection.innerHTML = `
+        <h4 style="color: #2c3e50; margin-bottom: 10px;">📊 Resumen General de Restricciones</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div style="text-align: center;">
+                <div style="font-size: 1.5em; font-weight: bold; color: #3498db;">${constraintsData.totalAssignments}</div>
+                <div style="color: #666;">Total de Asignaciones</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 1.5em; font-weight: bold; color: ${successRate >= 80 ? '#2ecc71' : successRate >= 60 ? '#f39c12' : '#e74c3c'};">${successRate}%</div>
+                <div style="color: #666;">Tasa de Éxito</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 1.5em; font-weight: bold; color: #e74c3c;">${constraintsData.assignmentsWithViolations}</div>
+                <div style="color: #666;">Con Violaciones</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 1.5em; font-weight: bold; color: #e74c3c;">${constraintsData.totalViolations}</div>
+                <div style="color: #666;">Total de Violaciones</div>
+            </div>
+        </div>
+    `;
+
+            constraintsContainer.appendChild(summarySection);
+        }
         // Función para procesar los datos del horario
         function processTimetableData(timetableJSON) {
             // Estructura para almacenar métricas procesadas
@@ -709,16 +926,8 @@
             });
 
             // 3. Restricciones
-            const constraintsData = Object.entries(metrics.constraints).map(([name, data]) => {
-                const percentage = data.total > 0 ? (data.fulfilled / data.total * 100).toFixed(1) : 0;
+            const constraintsData = processConstraintsFromNewFormat(timetableJSON);
 
-                return {
-                    name: name,
-                    fulfilled: data.fulfilled,
-                    total: data.total,
-                    percentage: parseFloat(percentage)
-                };
-            });
 
             // 4. Calcular utilización promedio de aulas
             const avgUtilization = roomData.length > 0
@@ -833,26 +1042,7 @@
             const constraintsContainer = document.getElementById('constraints-progress-container');
             constraintsContainer.innerHTML = '';
 
-            data.constraints.forEach(constraint => {
-                const progressItem = document.createElement('div');
-                progressItem.className = 'progress-item';
-
-                let barClass = 'danger';
-                if (constraint.percentage >= 90) barClass = 'success';
-                else if (constraint.percentage >= 70) barClass = 'warning';
-
-                progressItem.innerHTML = `
-                    <div class="progress-header">
-                        <span class="progress-label">${constraint.name}</span>
-                        <span class="progress-value">${constraint.percentage}% (${constraint.fulfilled}/${constraint.total})</span>
-                    </div>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar ${barClass}" style="width: ${constraint.percentage}%;"></div>
-                    </div>
-                `;
-
-                constraintsContainer.appendChild(progressItem);
-            });
+            createConstraintsVisualization(data.constraints);
 
             // Limpiar los gráficos existentes si ya se han creado
             if (roomUtilizationChart) roomUtilizationChart.destroy();
