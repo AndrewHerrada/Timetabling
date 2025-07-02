@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visualización de Horario</title>
     <style>
-        /* ... (Tu CSS existente va aquí) ... */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -34,21 +33,16 @@
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
-            /* Para que las celdas tengan ancho uniforme */
         }
 
         th,
         td {
             border: 1px solid #ddd;
             padding: 0;
-            /* Quitar padding para que los divs llenen la celda */
             text-align: center;
             vertical-align: top;
-            /* Alinear contenido arriba */
             height: 80px;
-            /* Altura mínima para las celdas */
             position: relative;
-            /* Para posicionar los divs si es necesario */
         }
 
         th {
@@ -56,46 +50,35 @@
             position: sticky;
             top: 0;
             z-index: 10;
-            /* Asegurar que los encabezados estén encima */
         }
 
         .hour-cell {
             background-color: #f0f0f0;
             font-weight: bold;
             width: 80px;
-            /* Ancho fijo para la columna de horas */
             position: sticky;
             left: 0;
             z-index: 5;
-            /* Asegurar que la columna de horas esté encima */
         }
 
         .timetable-cell-content {
             padding: 5px;
-            /* Padding interno para el contenido de la celda */
             height: 100%;
             overflow-y: auto;
-            /* Scroll si hay muchas clases */
         }
 
         .class-block {
-            /* Cambiado de class-cell a class-block */
             background-color: #e6f7ff;
             border-radius: 4px;
             margin-bottom: 3px;
-            /* Espacio entre bloques */
             padding: 4px;
             font-size: 0.8em;
-            /* Tamaño de fuente más pequeño */
             overflow: hidden;
-            /* Evitar que el texto se salga */
             text-overflow: ellipsis;
-            /* Puntos suspensivos si el texto es muy largo */
             border-left: 4px solid transparent;
-            /* Borde por defecto */
             cursor: pointer;
-            /* Indicar que se puede hacer clic */
             transition: background-color 0.2s;
+            position: relative;
         }
 
         .class-block:hover {
@@ -103,54 +86,59 @@
         }
 
         /* Clases para puntuación */
-        .score-6,
         .score-5 {
             border-left-color: #52c41a;
         }
 
-        /* Verde */
         .score-4 {
             border-left-color: #1890ff;
         }
 
-        /* Azul */
         .score-3,
         .score-2 {
             border-left-color: #faad14;
         }
 
-        /* Naranja */
-        .score-1,
-        .score-0 {
-            border-left-color: #f5222d;
+        .score-1 {
+            border-left-color: #ff7875;
         }
 
-        /* Rojo */
-
+        .score-0 {
+            border-left-color: #f5222d;
+            background-color: #fff2f0 !important;
+        }
 
         .computer-required {
             background-color: #f6ffed !important;
-            /* Fondo distinto si requiere PC */
             border-top: 1px dashed #b7eb8f;
-            /* Indicador visual sutil */
         }
 
         .computer-required:hover {
             background-color: #e9ffd1 !important;
         }
 
-
         .continuation {
             background-color: #f9f0ff !important;
-            /* Fondo distinto para continuación */
             font-style: italic;
             color: #531dab;
             border-left-color: #d3adf7 !important;
-            /* Borde morado para continuación */
         }
 
         .continuation:hover {
             background-color: #efdbff !important;
+        }
+
+        /* Indicador de violaciones */
+        .violations-indicator {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background-color: #ff4d4f;
+            color: white;
+            font-size: 0.7em;
+            padding: 1px 3px;
+            border-radius: 3px;
+            font-weight: bold;
         }
 
         .filters {
@@ -162,7 +150,6 @@
 
         select,
         input[type="text"] {
-            /* Aplicar a text input también */
             padding: 8px;
             border-radius: 4px;
             border: 1px solid #ddd;
@@ -186,10 +173,8 @@
             height: 20px;
             border-radius: 4px;
             border: 1px solid #ccc;
-            /* Borde ligero para visibilidad */
         }
 
-        /* Colores Leyenda (más precisos) */
         .perfect-color {
             background-color: #e6f7ff;
             border-left: 4px solid #52c41a;
@@ -207,6 +192,11 @@
 
         .low-color {
             background-color: #e6f7ff;
+            border-left: 4px solid #ff7875;
+        }
+
+        .violation-color {
+            background-color: #fff2f0;
             border-left: 4px solid #f5222d;
         }
 
@@ -217,7 +207,6 @@
         .continuation-color {
             background-color: #f9f0ff;
         }
-
 
         .metrics {
             margin: 20px 0;
@@ -230,31 +219,58 @@
             margin: 20px 0;
         }
 
-        /* Clase para ocultar bloques filtrados */
         .hidden {
             display: none !important;
         }
 
-        /* Tooltip */
         .tooltip {
             position: absolute;
             visibility: hidden;
-            background-color: black;
+            background-color: #333;
             color: white;
             text-align: left;
-            padding: 5px 8px;
+            padding: 8px 12px;
             border-radius: 6px;
             z-index: 20;
             opacity: 0;
             transition: opacity 0.3s;
-            font-size: 0.9em;
+            font-size: 0.85em;
             white-space: pre-line;
-            /* Para respetar saltos de línea */
+            max-width: 300px;
+            word-wrap: break-word;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .class-block:hover .tooltip {
             visibility: visible;
             opacity: 1;
+        }
+
+        /* Estilos para las violaciones específicas */
+        .violation-list {
+            margin-top: 5px;
+            font-size: 0.75em;
+            color: #ff4d4f;
+            font-weight: bold;
+        }
+
+        .violation-item {
+            display: block;
+            margin: 1px 0;
+        }
+
+        /* Toggle para mostrar/ocultar violaciones */
+        .show-violations-toggle {
+            margin: 10px 0;
+        }
+
+        .show-violations-toggle input {
+            margin-right: 5px;
+        }
+
+        /* Filtro específico para violaciones */
+        .violation-filter {
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -297,18 +313,37 @@
                 </div>
             </div>
 
+            <div class="violation-filter">
+                <label for="violation-filter-select">Filtrar por Violaciones:</label>
+                <select id="violation-filter-select">
+                    <option value="all">Todas las clases</option>
+                    <option value="violations-only">Solo con violaciones</option>
+                    <option value="no-violations">Sin violaciones</option>
+                </select>
+            </div>
+
+            <div class="show-violations-toggle">
+                <label>
+                    <input type="checkbox" id="show-violations-checkbox" checked>
+                    Mostrar detalles de violaciones en las clases
+                </label>
+            </div>
+
             <div class="legend">
                 <div class="legend-item">
-                    <div class="legend-color score-5 perfect-color"></div><span>5 puntos</span>
+                    <div class="legend-color perfect-color"></div><span>5 puntos (Perfecto)</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color score-4 good-color"></div><span>4 puntos</span>
+                    <div class="legend-color good-color"></div><span>4 puntos (Bueno)</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color score-3 medium-color"></div><span>2-3 puntos</span>
+                    <div class="legend-color medium-color"></div><span>2-3 puntos (Regular)</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color score-1 low-color"></div><span>0-1 puntos</span>
+                    <div class="legend-color low-color"></div><span>1 punto (Malo)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color violation-color"></div><span>0 puntos (Con Violaciones)</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color computer-color"></div><span>Requiere PC</span>
@@ -318,7 +353,6 @@
                 </div>
             </div>
         </div>
-
 
         <div id="timetable-display" style="overflow-x: auto;">
             <table id="timetable-table">
@@ -343,16 +377,30 @@
         const professorFilter = document.getElementById('professor-filter');
         const roomFilter = document.getElementById('room-filter');
         const courseFilterInput = document.getElementById('course-filter');
+        const violationFilter = document.getElementById('violation-filter-select');
+        const showViolationsCheckbox = document.getElementById('show-violations-checkbox');
         const filtersSection = document.getElementById('filters-section');
 
-        let timetableData = null; // Para almacenar los datos cargados
+        let timetableData = null;
         const uniqueGroups = new Set();
         const uniqueProfessors = new Set();
         const uniqueRooms = new Set();
 
-        // Horas asumidas (podrían extraerse del JSON si fuera necesario)
-        const HOURS_PER_DAY = 6; // 0 a 8
-        const START_HOUR = 15; // Para mostrar la hora real
+        const HOURS_PER_DAY = 6;
+        const START_HOUR = 15;
+
+        // Mapeo de códigos de violación a descripciones legibles
+        const violationDescriptions = {
+            'CONFLICTO_AULA': 'Conflicto de aula',
+            'FALTA_COMPUTADORAS': 'Falta computadoras',
+            'CAPACIDAD_INSUFICIENTE': 'Capacidad insuficiente',
+            'CONFLICTO_PROFESOR': 'Conflicto de profesor',
+            'CONFLICTO_GRUPOS': 'Conflicto de grupos',
+            'AULA_INCORRECTA': 'Aula incorrecta',
+            'SLOTS_NO_CONSECUTIVOS': 'Slots no consecutivos',
+            'SLOTS_SECUNDARIOS_FALTANTES': 'Slots secundarios faltantes',
+            'HORARIO_RESTRINGIDO_VIOLADO': 'Horario restringido violado'
+        };
 
         loadButton.addEventListener('click', () => {
             const jsonText = jsonInput.value.trim();
@@ -363,15 +411,14 @@
 
             try {
                 timetableData = JSON.parse(jsonText);
-                errorMessage.textContent = ''; // Limpiar errores previos
-                filtersSection.style.display = 'block'; // Mostrar filtros
+                errorMessage.textContent = '';
+                filtersSection.style.display = 'block';
                 populateFiltersAndDisplayTable();
-
             } catch (error) {
                 showError(`Error al procesar el JSON: ${error.message}. Asegúrate de que el formato sea correcto.`);
                 timetableData = null;
                 clearTableAndFilters();
-                filtersSection.style.display = 'none'; // Ocultar filtros si hay error
+                filtersSection.style.display = 'none';
             }
         });
 
@@ -392,62 +439,56 @@
             uniqueRooms.clear();
         }
 
-
         function populateFiltersAndDisplayTable() {
-            clearTableAndFilters(); // Limpiar antes de poblar
+            clearTableAndFilters();
 
             if (!timetableData) return;
 
             const days = Object.keys(timetableData);
 
-            // --- Crear Cabecera de la tabla ---
-            let headerHTML = '<th class="hour-cell">Hora</th>'; // Celda vacía para la esquina o para 'Hora'
+            // Crear cabecera
+            let headerHTML = '<th class="hour-cell">Hora</th>';
             days.forEach(day => {
                 headerHTML += `<th>${day}</th>`;
             });
             timetableHeader.innerHTML = headerHTML;
 
-            // --- Crear Cuerpo de la tabla y Recolectar datos para filtros ---
+            // Crear cuerpo de la tabla
             let bodyHTML = '';
             for (let hour = 0; hour < HOURS_PER_DAY; hour++) {
                 const displayHour = hour + START_HOUR;
-                bodyHTML += `<tr><td class="hour-cell">${displayHour}:00 - ${displayHour + 1}:00</td>`; // Celda de la hora
+                bodyHTML += `<tr><td class="hour-cell">${displayHour}:00 - ${displayHour + 1}:00</td>`;
 
                 days.forEach(day => {
-                    bodyHTML += `<td data-day="${day}" data-hour="${hour}">`; // Añadir data-attributes
+                    bodyHTML += `<td data-day="${day}" data-hour="${hour}">`;
                     const slotData = timetableData[day]?.[hour] || [];
-                    bodyHTML += '<div class="timetable-cell-content">'; // Contenedor interno para padding y scroll
+                    bodyHTML += '<div class="timetable-cell-content">';
 
                     slotData.forEach(item => {
-                        // Recolectar datos para filtros (solo de entradas principales)
                         if (!item.continuation) {
                             uniqueProfessors.add(item.professor);
                             uniqueRooms.add(item.room);
-                            // Separar grupos y añadirlos individualmente
                             item.groups.split(',').forEach(g => uniqueGroups.add(g.trim()));
                         }
 
-                        // Crear bloque de clase
                         bodyHTML += createClassBlockHTML(item);
                     });
-                    bodyHTML += '</div></td>'; // Cerrar contenedor interno y celda
+                    bodyHTML += '</div></td>';
                 });
                 bodyHTML += '</tr>';
             }
             timetableBody.innerHTML = bodyHTML;
 
-            // --- Poblar Filtros ---
             populateSelect(groupFilter, uniqueGroups);
             populateSelect(professorFilter, uniqueProfessors);
             populateSelect(roomFilter, uniqueRooms);
 
-            // Añadir event listeners a los filtros ahora que la tabla está creada
             addFilterListeners();
-            addClassBlockListeners(); // Para tooltips
+            addClassBlockListeners();
         }
 
         function populateSelect(selectElement, dataSet) {
-            const sortedData = Array.from(dataSet).sort((a, b) => a.localeCompare(b)); // Ordenar alfabéticamente
+            const sortedData = Array.from(dataSet).sort((a, b) => a.localeCompare(b));
             sortedData.forEach(item => {
                 const option = document.createElement('option');
                 option.value = item;
@@ -459,6 +500,7 @@
         function createClassBlockHTML(item) {
             let classes = ['class-block'];
             let tooltipContent = '';
+            let violationsHTML = '';
 
             if (item.continuation) {
                 classes.push('continuation');
@@ -474,13 +516,59 @@
             } else {
                 // Añadir clase de puntuación
                 if (item.score !== undefined) {
-                    classes.push(`score-${item.score}`);
+                    classes.push(`score-${Math.min(item.score, 5)}`);
                 }
-                // Añadir clase si requiere computadoras
+
                 if (item.requiresComputers) {
                     classes.push('computer-required');
                 }
+
+                // Crear contenido del tooltip con violaciones
                 tooltipContent = `Curso: ${item.course}\nProfesor: ${item.professor}\nAula: ${item.room}\nGrupos: ${item.groups}\nDuración: ${item.duration}h\nRequiere PC: ${item.requiresComputers ? 'Sí' : 'No'}\nPuntuación: ${item.score !== undefined ? item.score : 'N/A'}`;
+
+                // Añadir información de violaciones al tooltip
+                if (item.violatedConstraints && item.violatedConstraints.length > 0) {
+                    tooltipContent += '\n\n🚫 VIOLACIONES:';
+                    item.violatedConstraints.forEach(violation => {
+                        const description = violationDescriptions[violation] || violation;
+                        tooltipContent += `\n• ${description}`;
+                    });
+                }
+
+                // Añadir estado de restricciones al tooltip
+                if (item.constraintStatus) {
+                    tooltipContent += '\n\n📋 ESTADO DE RESTRICCIONES:';
+                    Object.entries(item.constraintStatus).forEach(([key, value]) => {
+                        const status = value ? '✅' : '❌';
+                        const keyDescription = {
+                            'aulaDisponible': 'Aula disponible',
+                            'computadorasOK': 'Computadoras OK',
+                            'capacidadSuficiente': 'Capacidad suficiente',
+                            'profesorDisponible': 'Profesor disponible',
+                            'gruposDisponibles': 'Grupos disponibles',
+                            'aulaCorrecta': 'Aula correcta',
+                            'slotsConsecutivosOK': 'Slots consecutivos OK',
+                            'horarioPermitido': 'Horario permitido'
+                        }[key] || key;
+                        tooltipContent += `\n${status} ${keyDescription}`;
+                    });
+                }
+
+                // Crear indicador visual de violaciones
+                let violationIndicator = '';
+                if (item.violatedConstraints && item.violatedConstraints.length > 0) {
+                    violationIndicator = `<span class="violations-indicator">${item.violatedConstraints.length}</span>`;
+
+                    // Crear lista de violaciones para mostrar en el bloque
+                    if (showViolationsCheckbox.checked) {
+                        violationsHTML = '<div class="violation-list">';
+                        item.violatedConstraints.forEach(violation => {
+                            const description = violationDescriptions[violation] || violation;
+                            violationsHTML += `<span class="violation-item">⚠ ${description}</span>`;
+                        });
+                        violationsHTML += '</div>';
+                    }
+                }
 
                 return `<div class="${classes.join(' ')}"
                              data-course="${item.course}"
@@ -488,20 +576,27 @@
                              data-room="${item.room}"
                              data-groups="${item.groups}"
                              data-score="${item.score}"
-                             data-requires-computers="${item.requiresComputers}">
+                             data-requires-computers="${item.requiresComputers}"
+                             data-violations="${item.violatedConstraints ? item.violatedConstraints.join(',') : ''}"
+                             data-has-violations="${item.violatedConstraints && item.violatedConstraints.length > 0}">
+                             ${violationIndicator}
                              <strong>${item.course}</strong><br>
                              <small>${item.professor} / ${item.room}</small>
+                             ${violationsHTML}
                              <span class="tooltip">${tooltipContent}</span>
                         </div>`;
             }
         }
 
-        // --- Lógica de Filtrado ---
         function addFilterListeners() {
             groupFilter.addEventListener('change', applyFilters);
             professorFilter.addEventListener('change', applyFilters);
             roomFilter.addEventListener('change', applyFilters);
-            courseFilterInput.addEventListener('input', applyFilters); // 'input' para filtrar mientras se escribe
+            courseFilterInput.addEventListener('input', applyFilters);
+            violationFilter.addEventListener('change', applyFilters);
+            showViolationsCheckbox.addEventListener('change', () => {
+                populateFiltersAndDisplayTable(); // Recrear la tabla para mostrar/ocultar violaciones
+            });
         }
 
         function applyFilters() {
@@ -509,6 +604,7 @@
             const selectedProfessor = professorFilter.value;
             const selectedRoom = roomFilter.value;
             const courseSearchText = courseFilterInput.value.toLowerCase().trim();
+            const violationFilterValue = violationFilter.value;
 
             const allClassBlocks = timetableBody.querySelectorAll('.class-block');
 
@@ -517,15 +613,21 @@
                 const professor = block.dataset.professor;
                 const room = block.dataset.room;
                 const course = block.dataset.course.toLowerCase();
+                const hasViolations = block.dataset.hasViolations === 'true';
 
-                // Verificar condiciones de filtro
                 const groupMatch = selectedGroup === 'all' || groups.includes(selectedGroup);
                 const professorMatch = selectedProfessor === 'all' || professor === selectedProfessor;
                 const roomMatch = selectedRoom === 'all' || room === selectedRoom;
                 const courseMatch = courseSearchText === '' || course.includes(courseSearchText);
 
-                // Mostrar u ocultar bloque
-                if (groupMatch && professorMatch && roomMatch && courseMatch) {
+                let violationMatch = true;
+                if (violationFilterValue === 'violations-only') {
+                    violationMatch = hasViolations;
+                } else if (violationFilterValue === 'no-violations') {
+                    violationMatch = !hasViolations;
+                }
+
+                if (groupMatch && professorMatch && roomMatch && courseMatch && violationMatch) {
                     block.classList.remove('hidden');
                 } else {
                     block.classList.add('hidden');
@@ -533,22 +635,18 @@
             });
         }
 
-        // --- Tooltips ---
         function addClassBlockListeners() {
             const allClassBlocks = timetableBody.querySelectorAll('.class-block');
             allClassBlocks.forEach(block => {
                 const tooltip = block.querySelector('.tooltip');
                 if (tooltip) {
                     block.addEventListener('mousemove', (e) => {
-                        // Posicionar tooltip cerca del cursor
                         tooltip.style.left = (e.clientX + 15) + 'px';
                         tooltip.style.top = (e.clientY + 15) + 'px';
                     });
                 }
             });
         }
-
-
     </script>
 
 </body>

@@ -1677,13 +1677,13 @@ class TimetableGenerator {
 
         // Llenar la estructura JSON con las asignaciones
         for (const assignment of chromosome.classAssignments) {
-            // Procesar el slot principal
-            this.addAssignmentToJSON(timetableJSON, assignment, assignment.timeSlot, false);
+            // Procesar el slot principal - AGREGAR chromosome como parámetro
+            this.addAssignmentToJSON(timetableJSON, assignment, assignment.timeSlot, false, chromosome);
 
             // Procesar slots secundarios para clases no consecutivas
             if (!assignment.course.requiresConsecutiveSlots && assignment.secondaryTimeSlots) {
                 for (const slot of assignment.secondaryTimeSlots) {
-                    this.addAssignmentToJSON(timetableJSON, assignment, slot, false);
+                    this.addAssignmentToJSON(timetableJSON, assignment, slot, false, chromosome);
                 }
             }
             // Procesar slots consecutivos
@@ -1692,7 +1692,7 @@ class TimetableGenerator {
                     const hourIndex = assignment.timeSlot.hourIndex + i;
                     if (hourIndex < 6) { // 6 horas por día
                         const continuationSlot = new TimeSlot(assignment.timeSlot.dayIndex, hourIndex);
-                        this.addAssignmentToJSON(timetableJSON, assignment, continuationSlot, true);
+                        this.addAssignmentToJSON(timetableJSON, assignment, continuationSlot, true, chromosome);
                     }
                 }
             }
@@ -1719,7 +1719,7 @@ class TimetableGenerator {
     }
 
     // 9. Modificar el método printTimetable para incluir información sobre aulas específicas
-    addAssignmentToJSON(timetableJSON, assignment, slot, isContinuation) {
+    addAssignmentToJSON(timetableJSON, assignment, slot, isContinuation, chromosome) {
         const dayName = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"][slot.dayIndex];
         const hour = slot.hourIndex;
 
@@ -1730,6 +1730,9 @@ class TimetableGenerator {
 
         // MODIFICACIÓN: Limitar el score a un máximo de 5
         const limitedScore = Math.min(assignment.score, 5);
+
+        // NUEVA FUNCIONALIDAD: Detectar restricciones violadas
+        const violatedConstraints = this.detectViolatedConstraints(assignment, chromosome);
 
         // Crear la entrada para el horario
         const entry = {
@@ -1747,7 +1750,9 @@ class TimetableGenerator {
             requiredRoomId: assignment.course.requiredRoomId,
             roomRequirementSatisfied: this.isRoomRequirementSatisfied(assignment),
             continuation: isContinuation,
-            score: limitedScore  // Usar el score limitado en lugar del original
+            score: limitedScore,  // Usar el score limitado en lugar del original
+            violatedConstraints: violatedConstraints,  // Nuevo atributo con restricciones violadas
+            constraintStatus: this.getConstraintStatus(assignment, chromosome)  // Estado detallado de cada restricción
         };
 
         // Asegurarse de que el array existe
@@ -1757,7 +1762,121 @@ class TimetableGenerator {
 
         timetableJSON[dayName][hour].push(entry);
     }
+
+    // NUEVO MÉTODO: Detectar restricciones violadas
+    detectViolatedConstraints(assignment, chromosome) {
+        const violations = [];
+        const totalStudents = assignment.course.studentGroups.reduce((sum, group) => sum + group.size, 0);
+
+        // 1. Verificar disponibilidad de aula
+        if (!chromosome.isRoomAvailableForAssignment(assignment)) {
+            violations.push("CONFLICTO_AULA");
+        }
+
+        // 2. Verificar requisito de computadoras
+        if (assignment.course.requiresComputers && !assignment.room.hasComputers) {
+            violations.push("FALTA_COMPUTADORAS");
+        }
+
+        // 3. Verificar capacidad del aula
+        if (assignment.room.capacity < totalStudents) {
+            violations.push("CAPACIDAD_INSUFICIENTE");
+        }
+
+        // 4. Verificar disponibilidad del profesor
+        if (!chromosome.isProfessorAvailableForAssignment(assignment)) {
+            violations.push("CONFLICTO_PROFESOR");
+        }
+
+        // 5. Verificar disponibilidad de grupos de estudiantes
+        if (!chromosome.areStudentGroupsAvailableForAssignment(assignment)) {
+            violations.push("CONFLICTO_GRUPOS");
+        }
+
+        // 6. Verificar requisito de aula específica
+        if (assignment.course.requiredRoomId !== null &&
+            assignment.room.id !== assignment.course.requiredRoomId) {
+            violations.push("AULA_INCORRECTA");
+        }
+
+        // 7. Verificar slots consecutivos
+        if (assignment.course.duration > 1) {
+            if (assignment.course.requiresConsecutiveSlots) {
+                const slots = assignment.getAllTimeSlots();
+                const isConsecutive = slots.length === assignment.course.duration &&
+                    slots.every((slot, index) =>
+                        index === 0 ||
+                        (slot.dayIndex === slots[index - 1].dayIndex &&
+                            slot.hourIndex === slots[index - 1].hourIndex + 1)
+                    );
+                if (!isConsecutive) {
+                    violations.push("SLOTS_NO_CONSECUTIVOS");
+                }
+            } else {
+                const hasAllSlots = assignment.secondaryTimeSlots.length === assignment.course.duration - 1;
+                if (!hasAllSlots) {
+                    violations.push("SLOTS_SECUNDARIOS_FALTANTES");
+                }
+            }
+        }
+
+        // 8. Verificar restricción de horario para grupos específicos
+        const restrictedGroups = ["G7", "G8", "G9", "G10", "G11", "G12", "G13", "G14"];
+        if (assignment.course.studentGroups.some(g => restrictedGroups.includes(g.id))) {
+            const allSlots = assignment.getAllTimeSlots();
+            if (allSlots.some(slot => slot.hourIndex >= 4)) {
+                violations.push("HORARIO_RESTRINGIDO_VIOLADO");
+            }
+        }
+
+        return violations;
+    }
+
+    // NUEVO MÉTODO: Obtener estado detallado de restricciones
+    getConstraintStatus(assignment, chromosome) {
+        const totalStudents = assignment.course.studentGroups.reduce((sum, group) => sum + group.size, 0);
+
+        return {
+            aulaDisponible: chromosome.isRoomAvailableForAssignment(assignment),
+            computadorasOK: !assignment.course.requiresComputers || assignment.room.hasComputers,
+            capacidadSuficiente: assignment.room.capacity >= totalStudents,
+            profesorDisponible: chromosome.isProfessorAvailableForAssignment(assignment),
+            gruposDisponibles: chromosome.areStudentGroupsAvailableForAssignment(assignment),
+            aulaCorrecta: assignment.course.requiredRoomId === null ||
+                assignment.room.id === assignment.course.requiredRoomId,
+            slotsConsecutivosOK: this.checkConsecutiveSlots(assignment),
+            horarioPermitido: this.checkTimeRestrictions(assignment)
+        };
+    }
+
+    // MÉTODO AUXILIAR: Verificar slots consecutivos
+    checkConsecutiveSlots(assignment) {
+        if (assignment.course.duration <= 1) return true;
+
+        if (assignment.course.requiresConsecutiveSlots) {
+            const slots = assignment.getAllTimeSlots();
+            return slots.length === assignment.course.duration &&
+                slots.every((slot, index) =>
+                    index === 0 ||
+                    (slot.dayIndex === slots[index - 1].dayIndex &&
+                        slot.hourIndex === slots[index - 1].hourIndex + 1)
+                );
+        } else {
+            return assignment.secondaryTimeSlots.length === assignment.course.duration - 1;
+        }
+    }
+
+    // MÉTODO AUXILIAR: Verificar restricciones de tiempo
+    checkTimeRestrictions(assignment) {
+        const restrictedGroups = ["G7", "G8", "G9", "G10", "G11", "G12", "G13", "G14"];
+        if (assignment.course.studentGroups.some(g => restrictedGroups.includes(g.id))) {
+            const allSlots = assignment.getAllTimeSlots();
+            return !allSlots.some(slot => slot.hourIndex >= 4);
+        }
+        return true;
+    }
 }
+
 
 // Ejemplo de uso
 function runExample() {
