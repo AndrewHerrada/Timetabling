@@ -1728,6 +1728,9 @@ class TimetableGenerator {
         const capacityUtilization = (totalStudents / assignment.room.capacity * 100).toFixed(1);
         const hasCapacityIssue = totalStudents > assignment.room.capacity;
 
+        // MODIFICACIÓN: Limitar el score a un máximo de 5
+        const limitedScore = Math.min(assignment.score, 5);
+
         // Crear la entrada para el horario
         const entry = {
             course: assignment.course.name,
@@ -1744,7 +1747,7 @@ class TimetableGenerator {
             requiredRoomId: assignment.course.requiredRoomId,
             roomRequirementSatisfied: this.isRoomRequirementSatisfied(assignment),
             continuation: isContinuation,
-            score: assignment.score
+            score: limitedScore  // Usar el score limitado en lugar del original
         };
 
         // Asegurarse de que el array existe
