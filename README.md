@@ -42,44 +42,44 @@ El dashboard ofrece tres métodos para cargar datos:
 
 El dashboard está organizado en cinco pestañas principales:
 
-1. **Evolución del Fitness**: Muestra la progresión del fitness a lo largo de las generaciones
-2. **Diversidad Genética**: Visualiza los patrones de diversidad y su impacto
-3. **Operadores Genéticos**: Analiza el rendimiento de los operadores (cruzamiento y mutación)
+1. **Evolución del fitness**: Muestra la progresión del fitness a lo largo de las generaciones
+2. **Diversidad genética**: Visualiza los patrones de diversidad y su impacto
+3. **Operadores genéticos**: Analiza el rendimiento de los operadores (cruzamiento y mutación)
 4. **Restricciones**: Evalúa el cumplimiento de las diferentes restricciones
 5. **Convergencia**: Analiza la velocidad de convergencia y los periodos de estancamiento
 
 ## Descripción de las Visualizaciones
 
-### Evolución del Fitness
+### Evolución del fitness
 
-- **Evolución del Fitness**: Gráfico que muestra el mejor fitness y el fitness promedio a lo largo de las generaciones
-- **Mejora Relativa**: Muestra el porcentaje de mejora entre generaciones consecutivas
-- **Distribución del Fitness**: Histograma de la distribución de fitness en la población final
+- **Evolución del fitness**: Gráfico que muestra el mejor fitness y el fitness promedio a lo largo de las generaciones
+- **Mejora relativa**: Muestra el porcentaje de mejora entre generaciones consecutivas
+- **Distribución del fitness**: Histograma de la distribución de fitness en la población final
 - **Estadísticas clave**: Fitness final, total de generaciones, mejora total y generación de convergencia
 
-### Diversidad Genética
+### Diversidad genética
 
-- **Evolución de la Diversidad**: Muestra cómo cambia la diversidad genética a lo largo del tiempo
+- **Evolución de la diversidad**: Muestra cómo cambia la diversidad genética a lo largo del tiempo
 - **Diversidad vs. Fitness**: Gráfico de dispersión que relaciona diversidad y fitness promedio
-- **Efecto de la Diversidad**: Analiza cómo el nivel de diversidad afecta a la tasa de mejora
+- **Efecto de la diversidad**: Analiza cómo el nivel de diversidad afecta a la tasa de mejora
 
-### Operadores Genéticos
+### Operadores genéticos
 
-- **Tasa de Éxito del Cruzamiento**: Muestra la efectividad del operador de cruzamiento
-- **Tasa de Éxito de la Mutación**: Muestra la efectividad del operador de mutación
-- **Comparación de Operadores**: Análisis comparativo del rendimiento de ambos operadores
+- **Tasa de Éxito del cruzamiento**: Muestra la efectividad del operador de cruzamiento
+- **Tasa de Éxito de la mutación**: Muestra la efectividad del operador de mutación
+- **Comparación de operadores**: Análisis comparativo del rendimiento de ambos operadores
 
 ### Restricciones
 
-- **Cumplimiento de Restricciones**: Barras de progreso que muestran el nivel de cumplimiento de cada restricción
-- **Evolución del Cumplimiento**: Gráfico temporal de la satisfacción de restricciones
-- **Restricciones más Difíciles**: Identifica las restricciones más difíciles de satisfacer
+- **Cumplimiento de restricciones**: Barras de progreso que muestran el nivel de cumplimiento de cada restricción
+- **Evolución del cumplimiento**: Gráfico temporal de la satisfacción de restricciones
+- **Restricciones más difíciles**: Identifica las restricciones más difíciles de satisfacer
 
 ### Convergencia
 
-- **Periodos de Estancamiento**: Visualiza duración y fitness alcanzado en cada periodo
-- **Tasas de Mejora**: Muestra las tasas de mejora a lo largo del tiempo
-- **Velocidad de Convergencia**: Gráfico que muestra qué tan rápido se acerca al fitness final
+- **Periodos de estancamiento**: Visualiza duración y fitness alcanzado en cada periodo
+- **Tasas de mejora**: Muestra las tasas de mejora a lo largo del tiempo
+- **Velocidad de convergencia**: Gráfico que muestra qué tan rápido se acerca al fitness final
 - **Tabla de Estancamiento**: Resumen de los periodos más significativos de estancamiento
 
 ## Interpretación de los Datos
