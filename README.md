@@ -2,7 +2,7 @@
 
 ## Descripción General
 
-El Dashboard de Análisis Evolutivo es una herramienta de visualización diseñada para monitorear y analizar el rendimiento de algoritmos genéticos aplicados a problemas de timetabling. Permite cargar y visualizar datos generados por el algoritmo, facilitando el análisis del proceso evolutivo, la convergencia y el cumplimiento de restricciones.
+El Dashboard de Análisis Evolutivo es una herramienta de visualización diseñada para monitorear y analizar el rendimiento de algoritmos genéticos aplicados a problemas de timetabling. Permite cargar y visualizar datos generados por el algoritmo para así facilitar el análisis del proceso evolutivo, la convergencia y el cumplimiento de restricciones.
 
 ## Requisitos
 
